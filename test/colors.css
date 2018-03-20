@@ -1,0 +1,69 @@
+@test {
+}
+
+
+html, body {
+	color:white;
+	background:#202020;
+	font-family:Helvetica, Arial, Sans;
+}
+
+pre { 
+	font-family:Menlo, Monaco, Monospace;
+	font-size:12px;
+	line-height:16px;
+	tab-size:2;
+	padding:1px 4px;
+	margin:0 0 16px 0;
+}
+
+/* Json Colors
+key: (blue) #7587A6
+number: (red) #CF6A4C
+boolean: (red) #CF6A4C
+string: (green) #8F9D6A
+gutter (darkgrey) #232323
+background (black) #141414 */
+
+#asdf {}
+
+.comment {
+	color:#746D74;
+	font-style:italic;
+	font-weight:normal;
+}
+
+.string {
+	color:#8F9D6A;
+}
+
+.escape {
+	color: #DDF7AC; /* light-green */
+}
+
+.hashid,
+.hash,
+.boolean,
+.number {
+	color:#CF6A4C; /* red */
+}
+
+.at,
+.symbol,
+.func {
+	color:#7587A6; /* blue */
+}
+
+.ident {
+	color: #D4BD7F; /* light brown */
+}
+
+.invalid {
+	background:#60315A; /* purple */
+}
+
+/**** HTML ***/
+
+.tagName {
+	color:#B38243; /* orange-brown */
+}

@@ -1,0 +1,39 @@
+Codepoints
+----------
+
+digit
+	(>= 0x30 & <= 0x39) // 0-9
+
+hex digit
+	digit | (>= 0x41 & <= 0x46) | (>= 0x61 & <= 0x66) // 0-9 A-F a-f
+
+uppercase_letter
+	(>= 0x41 & <= 0x5A) // A-Z
+
+lowercase_letter
+	(>= 0x61 & <= 0x7A) // a-z
+
+letter
+	uppercase_letter | lowercase_letter
+
+nonASCII
+	>= 0x80 // anything beyond the <control> character
+
+name_start
+	letter | nonASCII | 0x5F // 5F: underscore
+
+name
+	name_start | digit | 0x2D // 2D: hyphen-minus
+
+non_printable
+	(>= 0x00 & <= 0x08) | 0x0B | (>= 0x0E & <= 0x1F) | 0x7F
+
+newline
+	0x0A // 0x0D and 0x0C assumed to be converted to 0x0A during preprocessing
+
+whitespace
+	newline | 0x09 | 0x20
+
+surrogate
+	>= U+D800 & <= U+DFFF
+
