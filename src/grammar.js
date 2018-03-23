@@ -111,8 +111,8 @@ const grammar =
 
 , comment: [
   { if: '[*]/',         emit: T_comment_end,    goto: 'main'      },
-  { if: '[*][^/][^*]*', emit: T_comment_data                      },
-  { if: '[^*]+',        emit: T_comment_data,                     },
+  { if: '.[^*]*',       emit: T_comment_data                      },
+  { if: '.+',           emit: T_comment_data,                     },
   ]
 
 , string: [
