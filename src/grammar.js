@@ -10,7 +10,7 @@ var log = console.log.bind (console)
 // - [ ] unicode range tokens
 // - [ ] count newlines
 // - [x] hashid vs hash?
-// - [ ] url parsing (via coalescing, no, more tricky)
+// - [ ] url parsing (via coalescing, no, is more tricky)
 // - [ ] coalescing (see below)
 // - [x] sqstring (via this.quot)
 // - [x] operators, |=, ~= etc
@@ -30,7 +30,7 @@ const R_op = '[|~^*$]='
 const R_hex_esc = '\\\\[0-9A-Fa-f]{1,6}[ \t\n\r\f]?' // NB newlines
 
 // Strings
-const R_string = "[^\n\r\f\\'\"]+"
+const R_string = "[^\n\r\f\\\\'\"]+"
 const R_nl_esc = '\\\\[\n\r\f]' // NB newlines
 
 // Numbers
@@ -138,11 +138,11 @@ const grammar =
 
 function start_string (chunk) {
   this.quot = chunk
-  return [T_string_start, chunk]
+  return T_string_start
 }
 
 function quote_emit (chunk) {
-  return [chunk === this.quot ? T_string_end : T_string_data, chunk]
+  return chunk === this.quot ? T_string_end : T_string_data
 }
 
 function unquote (chunk) {
@@ -155,40 +155,36 @@ const mirror =
 
 function group_start (chunk) {
   this.stack.push (chunk)
-  return [T_group_start, chunk]
+  return T_group_start
 }
 
 function group_end (chunk) {
   const s = this.stack
-  if (s[s.length-1] === mirror [chunk]) {
+  if (mirror [chunk] === s [s.length-1]) {
     s.pop ()
-    return [T_group_end, chunk]
+    return T_group_end
   }
-  else {
-   return [T_group_noend, chunk]
-  }
+  return T_group_noend
 }
 
 
 //
 // Test
 
+/*
+
 var sample = require ('fs') .readFileSync ( __dirname+'/../test/style6.dpl')
-
-var sample = ' @charset utf8; @me {} #12038, #-ai #uu tes[ bad} pairing) ting "a string with \' a bad end " uaa'
+var sample = ' @charset utf8; @me {} #12038, #-ai #uu tes[ bad} pairing) ting "a string with \' a bad end " "uaabc\\'
 const chunks = new tinylex (grammar, 'main', { stack:[] }, sample)
+for (var i of chunks) log (i)
 
-for (var i of chunks)
-  log (i)
-
+//*/
 
 // coalescing, may even make it into a simple parser then. 
-// <number><ident> => <dimension>
-// <number>% => <percentage>
-// #<name> => <hash>
 // <ident><lparen> => <func-start>
 // <name:url><lparen> => <url-start>
-// <name-start><name-data><name-end> ==> <name>?
+// <number><ident> => <dimension>
+// <number>% => <percentage>
 // <string-start><string-data>*<badstring-end> ==> ??
 
 function* coalesced (tokens) {
@@ -196,6 +192,5 @@ function* coalesced (tokens) {
   for (let token of tokens) 
     null // TODO
 }
-
 
 module.exports = grammar

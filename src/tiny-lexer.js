@@ -64,7 +64,7 @@ function Lexer (grammar, start, customState, input) {
 
 
     self.value = (typeof edge.emit === 'function')
-      ? edge.emit.call (customState, chunk) // output token
+      ? [edge.emit.call (customState, chunk), chunk]
       : [edge.emit, chunk]
 
     symbol = (typeof edge.goto === 'function')
