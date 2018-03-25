@@ -5,18 +5,6 @@ var log = console.log.bind (console)
 // A tiny-lexer based tokenizer for CSS
 // ====================================
 
-// TODO list:
-// - [x] handle surrogate pairs (not needed)
-// - [ ] unicode range tokens
-// - [x] count newlines
-// - [x] hashid vs hash?
-// - [ ] url parsing (via coalescing, no, is more tricky)
-// - [ ] coalescing (see below)
-// - [x] sqstring (via this.quot)
-// - [x] operators, |=, ~= etc
-// - [x] added pairing {}, [], () into the lexer
-// - [x] wrap up/ api
-
 // ### Regular expressions
 // These are used in the tiny-lexer grammar below.
 // Each regular expression corresponds to a transition between states. 
@@ -53,7 +41,7 @@ const R_ident = '[A-Za-z0-9\\-_\u0080-\uFFFF]+'
 
 // ### Token types
 
-let t = 0
+//let t = 0
 const T_CDC = 'CDC' // ++t
   , T_CDO = 'CDO' // ++t
   , T_delim = 'delim' // ++t
@@ -171,32 +159,6 @@ function group_end (chunk) {
     return T_group_end
   }
   return T_group_noend
-}
-
-
-//
-// Test
-
-/*
-
-var sample = require ('fs') .readFileSync ( __dirname+'/../test/style6.dpl')
-var sample = ' @charset utf8; @me {} #12038, #-ai #uu tes[ bad} pairing) ting "a string with \' a bad end " "uaabc\\'
-const chunks = new tinylex (grammar, 'main', { stack:[] }, sample)
-for (var i of chunks) log (i)
-
-//*/
-
-// coalescing, may even make it into a simple parser then. 
-// <ident><lparen> => <func-start>
-// <name:url><lparen> => <url-start>
-// <number><ident> => <dimension>
-// <number>% => <percentage>
-// <string-start><string-data>*<badstring-end> ==> ??
-
-function* coalesced (tokens) {
-  let spare
-  for (let token of tokens) 
-    null // TODO
 }
 
 module.exports = grammar
