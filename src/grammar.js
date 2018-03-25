@@ -15,7 +15,7 @@ var log = console.log.bind (console)
 // - [x] sqstring (via this.quot)
 // - [x] operators, |=, ~= etc
 // - [x] added pairing {}, [], () into the lexer
-// - [ ] wrap up/ api
+// - [x] wrap up/ api
 
 // ### Regular expressions
 // These are used in the tiny-lexer grammar below.
@@ -39,15 +39,15 @@ const R_fract = '(?:\\.[0-9]+)'
 const R_opt_exp = '(?:[eE][+\\-]?[0-9]+)?'
 const R_number = '[+-]?(?:' + R_fract + '|[0-9]+' + R_fract + '?)' + R_opt_exp
 
-// Names
-// For identifier-like tokens, I am doing a lookahead (max 3 chars)
+// Identifiers
+// Using a lookahead of max 3 chars
 const R_starts_ident = '(?=[-]?(?:[A-Za-z_\u0080-\uFFFF]|\\\\[^\n\r\f]))'
 const R_hash_lookahead = '(?=(?:[A-Za-z0-9\\-_\u0080-\uFFFF]|\\\\[^\n\r\f]))'
 
+const R_at_start = '@'+R_starts_ident
 const R_hash_start = '#'+R_hash_lookahead
 const R_hashid_start = '#'+R_starts_ident
 const R_ident_start = '.{0}'+R_starts_ident
-const R_at_start = '@'+R_starts_ident
 const R_ident = '[A-Za-z0-9\\-_\u0080-\uFFFF]+'
 
 
@@ -83,55 +83,51 @@ const T_CDC = 'CDC' // ++t
   , T_ignore_newline = 'ignore-newline' // ++t
   , T_escape_eof = 'escape-eof' // ++t
   , T_string_end = 'string-end' // ++t
-  , T_string_end_bad = 'string-end-badstring' // ++t
+  , T_string_end_bad = 'string-end-bad' // ++t
 
 
 // ### The actual grammar
 
 const grammar = 
 { main: [
-  { if: '/[*]',         emit: T_comment_start,  goto: 'comment'   },
-  { if: '["\']',        emit: T_string_start,   goto:  quote      },
-  { if: R_ident_start,  emit: T_ident_start,    goto: 'ident'     },
-  { if: R_hashid_start, emit: T_hashid_start,   goto: 'ident'     },
-  { if: R_hash_start,   emit: T_hash_start,     goto: 'ident'     },
-  { if: R_at_start,     emit: T_at_start,       goto: 'ident'     },
-  { if: R_space,        emit: T_space,                            },
-  { if: R_newline,      emit: nl (T_newline),                     },
-  { if: R_number,       emit: T_number,                           },
-  { if: R_lgroup,       emit: group_start,                        },
-  { if: R_rgroup,       emit: group_end,                          },
-  { if: '[,:;]',        emit: T_sep,                              }, // In the spec these are separate tokens
-  { if: R_op,           emit: T_op,                               }, // likewise
-  { if: '[|][|]',       emit: T_column,                           },
-  { if: '<!--',         emit: T_CDO,                              },
-  { if: '-->',          emit: T_CDC,                              },
-  { if: '\\\\',         emit: T_delim_invalid,                    },
-  { if: '.',            emit: T_delim,                            },
-  ]
+  { if: '/[*]',         emit: T_comment_start,  goto: 'comment' },
+  { if: '["\']',        emit: T_string_start,   goto:  quote    },
+  { if: R_ident_start,  emit: T_ident_start,    goto: 'ident'   },
+  { if: R_hashid_start, emit: T_hashid_start,   goto: 'ident'   },
+  { if: R_hash_start,   emit: T_hash_start,     goto: 'ident'   },
+  { if: R_at_start,     emit: T_at_start,       goto: 'ident'   },
+  { if: R_space,        emit: T_space,                          },
+  { if: R_newline,      emit: nl (T_newline),                   },
+  { if: R_number,       emit: T_number,                         },
+  { if: R_lgroup,       emit: group_start,                      },
+  { if: R_rgroup,       emit: group_end,                        },
+  { if: '[,:;]',        emit: T_sep,                            }, // In the spec these are separate tokens
+  { if: R_op,           emit: T_op,                             }, // likewise
+  { if: '[|][|]',       emit: T_column,                         },
+  { if: '<!--',         emit: T_CDO,                            },
+  { if: '-->',          emit: T_CDC,                            },
+  { if: '\\\\',         emit: T_delim_invalid,                  },
+  { if: '.',            emit: T_delim,                          }]
 
 , comment: [
-  { if: '[*]/',         emit: T_comment_end,    goto: 'main'      },
-  { if: '.[^*]*',       emit: T_comment_data                      },
-  ]
+  { if: '[*]/',         emit: T_comment_end,    goto: 'main'    },
+  { if: '.[^*]*',       emit: T_comment_data                    }]
 
 , string: [
-  { if: R_newline,      emit: nl (T_string_end_bad), goto: 'main' },
-  { if: '["\']',        emit: quote_emit,       goto: unquote     },
-  { if: R_string,       emit: T_string_data                       },
-  { if: R_nl_esc,       emit: T_ignore_newline                    },
-  { if: '\\\\$',        emit: T_escape_eof                        },
-  { if: R_hex_esc,      emit: nl (T_escape_hex)                   }, // FIXME only if indeed a newline
-  { if: '\\\\.',        emit: T_escape_char                       },
-  {                     emit: T_string_end_bad, goto: 'main'      },
-  ]
+  { if: '["\']',        emit: quote_emit,       goto: unquote   },
+  { if: R_string,       emit: T_string_data                     },
+  { if: R_nl_esc,       emit: nl (T_ignore_newline)             },
+  { if: R_hex_esc,      emit: nl (T_escape_hex)                 }, // FIXME newline count
+  { if: '\\\\$',        emit: T_escape_eof                      },
+  { if: '\\\\.',        emit: T_escape_char                     },
+  { if: '$',            emit: T_string_end,     goto: 'main'    },
+  {                     emit: T_string_end_bad, goto: 'main'    }]
 
 , ident: [
-  { if: R_ident,        emit: T_ident_data                        },
-  { if: R_hex_esc,      emit: nl (T_escape_hex)                   }, // FIXME
-  { if: '\\\\.',        emit: T_escape_char                       }, // FIXME what about backslash-newline?
-  {                     emit: T_ident_end,      goto: 'main'      },
-  ]
+  { if: R_ident,        emit: T_ident_data                      },
+  { if: R_hex_esc,      emit: nl (T_escape_hex)                 }, // FIXME newline count
+  { if: '\\\\.',        emit: T_escape_char                     },
+  {                     emit: T_ident_end,      goto: 'main'    }]
 }
 
 

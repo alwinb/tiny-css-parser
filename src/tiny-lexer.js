@@ -17,81 +17,62 @@ var log = console.log.bind (console)
 // The Lexer runtime
 // -----------------
 
-function Lexer (grammar, start, customState, input) {
+function Lexer (grammar, start, CustomState) {
   const states = compile (grammar)
-	const self = this
+  this.tokenize = tokenize
 
-	let symbol = start
-    , position = 0
+  function tokenize (input) {
+    const custom = new CustomState ()
+    let symbol = start
+      , state = states [symbol]
+      , position = 0
 
-  this.goto = function name (s) { symbol = s }
-  this.getState = function () { return customState }
-  this.value
-  this.done = false
-  this.next = next
-  this[Symbol.iterator] = _ => this // That should create a copy instead, or be up one level
-
-	function next () {
-    if (states [symbol] == null) 
-      throw new Error ('Lexer: no such symbol: '+symbol)
-
-    let state = states [symbol]
-      , regex = state.regex
-
-    regex.lastIndex = position
-		let r = regex.exec (input)
-    // log (position, r)
-
-    if (position === input.length && regex.lastIndex === 0) {
-      self.value = null
-      self.done = true
-			return self
+    const self = { 
+      value: null, done: false, next: next, state: custom,
+      [Symbol.iterator]: function () { return self }
     }
-
-		if (r == null) { // FIXME end at EOF only, else emit error? or throw it?
-      log ('invalid')
-      self.value = '' // Or even specify that explicitly in the grammar?
-      self.done = true
-			return self
-    }
-
-    // TODO take care not to skip chars! (e.g. simulate the y flag)..
-    // log (position, regex.lastIndex)
-		position = regex.lastIndex
-    customState.position = regex.lastIndex
-    let i = 1; while (r[i] == null) i++
-    let edge = state.edges [i-1]
-      , chunk = r[i]
-
-
-    self.value = (typeof edge.emit === 'function')
-      ? [edge.emit.call (customState, chunk, position), chunk]
-      : [edge.emit, chunk]
-
-    symbol = (typeof edge.goto === 'function')
-      ? edge.goto.call (customState, chunk, position)
-      : edge.goto
 
     return self
-	}
+
+    function next () {
+      const regex = state.regex
+      regex.lastIndex = position
+  		const match = regex.exec (input)
+
+      if (position === input.length && regex.lastIndex === 0) {
+        self.value = null
+        self.done = true
+  			return self
+      }
+  		
+      if (match == null)
+        throw new SyntaxError ('Lexer: invalid input before: '+input.substr (position, 12))
+
+  		position = custom.position = regex.lastIndex
+
+      let i = 1; while (match [i] == null) i++
+      const edge = state.edges [i-1]
+
+      self.value = typeof edge.emit === 'function'
+        ? [edge.emit.call (custom, match[i]), match [i]]
+        : [edge.emit, match [i]]
+
+      symbol = typeof edge.goto === 'function'
+        ? edge.goto.call (custom, match [i])
+        : edge.goto
+
+      state = states [symbol]
+      if (state == null) 
+        throw new Error ('Lexer: no such symbol: '+symbol)
+  
+      return self
+  	}
+  }
 }
 
 
 // The compiler
 // ------------
-
-function State (table, name) {
-	this.regex = new RegExp ('(' + table.map (fst) .join (')|(') + ')', 'gy')
-	this.edges = table.map ( fn )
-
-  function fn (row) {
-    return { goto:'goto' in row ? row.goto : name, emit: 'emit' in row ? row.emit : null }
-  }
-}
-
-function fst (row) {
-  return ('if' in row) ? row ['if'] : '.{0}'
-}
 
 function compile (grammar) {
 	const compiled = {}
@@ -100,6 +81,21 @@ function compile (grammar) {
 	return compiled
 }
 
+function State (table, name) {
+  this.name = name
+	this.regex = new RegExp ('(' + table.map (fst) .join (')|(') + ')', 'gy')
+	this.edges = table.map ( fn )
 
+  function fn (row) {
+    return {
+      goto: 'goto' in row ? row.goto : name, 
+      emit: 'emit' in row ? row.emit : null
+    }
+  }
+}
+
+function fst (row) {
+  return ('if' in row) ? row ['if'] : '.{0}'
+}
 
 
