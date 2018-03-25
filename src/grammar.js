@@ -8,30 +8,31 @@ var log = console.log.bind (console)
 // TODO list:
 // - [x] handle surrogate pairs (not needed)
 // - [ ] unicode range tokens
-// - [ ] count newlines
+// - [x] count newlines
 // - [x] hashid vs hash?
 // - [ ] url parsing (via coalescing, no, is more tricky)
 // - [ ] coalescing (see below)
 // - [x] sqstring (via this.quot)
 // - [x] operators, |=, ~= etc
 // - [x] added pairing {}, [], () into the lexer
+// - [ ] wrap up/ api
 
 // ### Regular expressions
 // These are used in the tiny-lexer grammar below.
 // Each regular expression corresponds to a transition between states. 
 
 const R_space = '[\t ]+'
-const R_newline = '\r?\n|[\r\f]'
+const R_newline = '(?:\r?\n|[\r\f])'
 const R_lgroup = '[({[]'
 const R_rgroup = '[)}\\]]'
 const R_op = '[|~^*$]='
 
 // Escapes
-const R_hex_esc = '\\\\[0-9A-Fa-f]{1,6}[ \t\n\r\f]?' // NB newlines
+const R_hex_esc = '\\\\[0-9A-Fa-f]{1,6}'+R_newline+'?'
 
 // Strings
 const R_string = "[^\n\r\f\\\\'\"]+"
-const R_nl_esc = '\\\\[\n\r\f]' // NB newlines
+const R_nl_esc = '\\\\'+R_newline
 
 // Numbers
 const R_fract = '(?:\\.[0-9]+)'
@@ -90,13 +91,13 @@ const T_CDC = 'CDC' // ++t
 const grammar = 
 { main: [
   { if: '/[*]',         emit: T_comment_start,  goto: 'comment'   },
-  { if: '["\']',        emit: start_string,     goto: 'string'    },
+  { if: '["\']',        emit: T_string_start,   goto:  quote      },
   { if: R_ident_start,  emit: T_ident_start,    goto: 'ident'     },
   { if: R_hashid_start, emit: T_hashid_start,   goto: 'ident'     },
   { if: R_hash_start,   emit: T_hash_start,     goto: 'ident'     },
   { if: R_at_start,     emit: T_at_start,       goto: 'ident'     },
   { if: R_space,        emit: T_space,                            },
-  { if: R_newline,      emit: T_newline,                          },  // NB newlines
+  { if: R_newline,      emit: nl (T_newline),                     },
   { if: R_number,       emit: T_number,                           },
   { if: R_lgroup,       emit: group_start,                        },
   { if: R_rgroup,       emit: group_end,                          },
@@ -112,41 +113,50 @@ const grammar =
 , comment: [
   { if: '[*]/',         emit: T_comment_end,    goto: 'main'      },
   { if: '.[^*]*',       emit: T_comment_data                      },
-  { if: '.+',           emit: T_comment_data,                     },
   ]
 
 , string: [
-  { if: R_newline,      emit: T_string_end_bad, goto: 'main'      }, // NB newlines
+  { if: R_newline,      emit: nl (T_string_end_bad), goto: 'main' },
   { if: '["\']',        emit: quote_emit,       goto: unquote     },
   { if: R_string,       emit: T_string_data                       },
   { if: R_nl_esc,       emit: T_ignore_newline                    },
   { if: '\\\\$',        emit: T_escape_eof                        },
-  { if: R_hex_esc,      emit: T_escape_hex                        },
+  { if: R_hex_esc,      emit: nl (T_escape_hex)                   }, // FIXME only if indeed a newline
   { if: '\\\\.',        emit: T_escape_char                       },
+  {                     emit: T_string_end_bad, goto: 'main'      },
   ]
 
 , ident: [
   { if: R_ident,        emit: T_ident_data                        },
-  { if: R_hex_esc,      emit: T_escape_hex                        },
+  { if: R_hex_esc,      emit: nl (T_escape_hex)                   }, // FIXME
   { if: '\\\\.',        emit: T_escape_char                       }, // FIXME what about backslash-newline?
-  {                     emit: T_ident_end,      goto: 'main'      },                           
+  {                     emit: T_ident_end,      goto: 'main'      },
   ]
 }
+
 
 // Additional state management, to
 //  supplement the grammar/ state machine. 
 
-function start_string (chunk) {
+function nl (type) { return function (chunk) {
+  this.lineStart = this.position
+  this.line++
+  return type
+} }
+
+function quote (chunk) {
   this.quot = chunk
-  return T_string_start
+  return 'string'
 }
 
 function quote_emit (chunk) {
-  return chunk === this.quot ? T_string_end : T_string_data
+  return chunk !== this.quot ? T_string_data : T_string_end
 }
 
 function unquote (chunk) {
-  return chunk === this.quot ? 'main' : 'string'
+  if (chunk !== this.quot) return 'string'
+  this.quot = null
+  return 'main'
 }
 
 const mirror = 

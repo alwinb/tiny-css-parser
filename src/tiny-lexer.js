@@ -25,7 +25,7 @@ function Lexer (grammar, start, customState, input) {
     , position = 0
 
   this.goto = function name (s) { symbol = s }
-
+  this.getState = function () { return customState }
   this.value
   this.done = false
   this.next = next
@@ -58,17 +58,18 @@ function Lexer (grammar, start, customState, input) {
     // TODO take care not to skip chars! (e.g. simulate the y flag)..
     // log (position, regex.lastIndex)
 		position = regex.lastIndex
+    customState.position = regex.lastIndex
     let i = 1; while (r[i] == null) i++
     let edge = state.edges [i-1]
       , chunk = r[i]
 
 
     self.value = (typeof edge.emit === 'function')
-      ? [edge.emit.call (customState, chunk), chunk]
+      ? [edge.emit.call (customState, chunk, position), chunk]
       : [edge.emit, chunk]
 
     symbol = (typeof edge.goto === 'function')
-      ? edge.goto.call (customState, chunk)
+      ? edge.goto.call (customState, chunk, position)
       : edge.goto
 
     return self

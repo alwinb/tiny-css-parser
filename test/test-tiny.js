@@ -23,18 +23,25 @@ function map (fn) { return function* (obj) {
 // ====
 
 const samples =
-  [ ' @charset utf8; @me {} #12038, #-ai /*comm */ #uu tes[ bad} pairing) ting "a str\\40ing with \' a bad end " "uaabc\\'
+  [ ' @charset utf8; @me {} #12038, #-ai /*comm */ #uu \n "a string with es\\40capes and \' such \\\n indeed"'
   , '/* A string ended by a newline */\n "string ended\n yes indeed'
   , '/* Incorrect pairing */\npairing { one ( two } three ] four [ five ) [six, seven] ]  ) }'
   , '/* Operators and delimiters */\n |= =? ?* *= | || &| ~ ~= ='
-  , fs.readFileSync ('./style.dpl')
-  , fs.readFileSync ('./style6.dpl')
+  , '/* Escapes in ientifiers */\n one\\" two, thee\\fc0 four fi\\F0ve'
+  , '/* Invalid delimiter */ some\\\nthing'
+  , fs.readFileSync ('./data/style.dpl')
+  , fs.readFileSync ('./data/style6.dpl')
   , fs.readFileSync ('./colors.css')
   ]
 
 
 function tokenize (input) {
-  return new tinylex (grammar, 'main', { stack:[] }, input)
+  return new tinylex (grammar, 'main', { lineStart:0, line:0, stack:[] }, input)
 }
 
-compose (flush, flatten, head ('colors.css?q'+Math.random()), map (renderTokens), map (tokenize)) (samples)
+//compose (flush, flatten, head ('colors.css?q'+Math.random()), map (renderTokens), map (tokenize)) (samples)
+
+
+var stream = tokenize ('hello  \r\n world "badstring\n newline and "string with \\ff\n newline hex esc')
+for (var i of stream)
+  log (i, stream.getState())

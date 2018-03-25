@@ -24,13 +24,15 @@ gutter (darkgrey) #232323
 background (black) #141414 */
 
 .invalid,
-.string-end-badstring , 
+.string-end-badstring,
+.delim-invalid, 
 .group-noend {
   background:#60315A; /* purple */
+  padding:1px 0 0;
 }
 
 .group-noend {
-	color:#746D74;
+	color:#202020;
 } 
 
 .comment,
@@ -56,7 +58,8 @@ background (black) #141414 */
 .escape,
 .escape-char, 
 .escape-hex, 
-.escape-eof
+.escape-eof,
+.ignore-newline
  {
 	color: #DDF7AC; /* light-green */
 }
