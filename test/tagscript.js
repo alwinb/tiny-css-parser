@@ -92,24 +92,24 @@ const AMPQ = /[&"]/g
 const ATTRNAME = /^[^\t\n\f />][^\t\n\f /=>]*$/
 
 function escapeChar (c) {
-	return c === '&' ? '&amp;'
-	: c === '<' ? '&lt;'
-	: c === '"' ? '&quot;' : c }
+  return c === '&' ? '&amp;'
+  : c === '<' ? '&lt;'
+  : c === '"' ? '&quot;' : c }
 
 // The `renderData` function is called for every
 // placeholder `Tag` in an 'html-data' context. 
 
 function renderData (value) {
-	return String (value) .replace (AMPLT, escapeChar)
+  return String (value) .replace (AMPLT, escapeChar)
 }
 
 function renderRawText (value) {
   // TODO
-	// Idea: For 'escaping' ending sequneces in user visible tags,
-	// insert an additional '\u200b' (8203) zero-width space character
-	// after the tagName. 
-	// However, for script tags, we want to use something else,
-	// and probably for other things such as iframes etc too. 
+  // Idea: For 'escaping' ending sequneces in user visible tags,
+  // insert an additional '\u200b' (8203) zero-width space character
+  // after the tagName. 
+  // However, for script tags, we want to use something else,
+  // and probably for other things such as iframes etc too. 
   // Maybe this should just throw for now? Or return empty?
 }
 
@@ -118,14 +118,14 @@ function renderRawText (value) {
 
 function renderAttributes (arg) {
   const r = ['']
-	if (arg != null && typeof arg === 'object')
+  if (arg != null && typeof arg === 'object')
   for (let k in arg)
-	if (arg[k] != null && typeof arg[k] !== 'function' && ATTRNAME.test(k)) {
-		let v = String (arg[k])
-		if (v === '') r.push (k)
-		else r.push ([k, '="', String (v) .replace (AMPQ, escapeChar), '"'].join(''))
+  if (arg[k] != null && typeof arg[k] !== 'function' && ATTRNAME.test(k)) {
+    let v = String (arg[k])
+    if (v === '') r.push (k)
+    else r.push ([k, '="', String (v) .replace (AMPQ, escapeChar), '"'].join(''))
   }
 
-	return r.join(' ')
+  return r.join(' ')
 }
 
