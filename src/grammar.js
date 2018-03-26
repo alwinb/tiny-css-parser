@@ -1,6 +1,5 @@
 "use strict"
 const tinylex = require ('./tiny-lexer')
-var log = console.log.bind (console)
 
 // A tiny-lexer based tokenizer for CSS
 // ====================================
@@ -103,12 +102,12 @@ const grammar =
 
 , string: [
   { if: '["\']',        emit: quote_emit,       goto: unquote   },
+  { if: '$',            emit: T_string_end,     goto: 'main'    },
   { if: R_string,       emit: T_string_data                     },
   { if: R_nl_esc,       emit: nl (T_ignore_newline)             },
   { if: R_hex_esc,      emit: nl (T_escape_hex)                 }, // FIXME newline count
   { if: '\\\\$',        emit: T_escape_eof                      },
   { if: '\\\\.',        emit: T_escape_char                     },
-  { if: '$',            emit: T_string_end,     goto: 'main'    },
   {                     emit: T_string_end_bad, goto: 'main'    }]
 
 , ident: [
@@ -160,5 +159,6 @@ function group_end (chunk) {
   }
   return T_group_noend
 }
+
 
 module.exports = grammar

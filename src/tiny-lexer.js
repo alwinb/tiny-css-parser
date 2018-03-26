@@ -1,6 +1,5 @@
 "use strict"
 module.exports = Lexer
-var log = console.log.bind (console)
 
 // Tiny lexer runtime
 // ==================
@@ -37,18 +36,18 @@ function Lexer (grammar, start, CustomState) {
     function next () {
       const regex = state.regex
       regex.lastIndex = position
-  		const match = regex.exec (input)
+      const match = regex.exec (input)
 
       if (position === input.length && regex.lastIndex === 0) {
         self.value = null
         self.done = true
-  			return self
+        return self
       }
-  		
+
       if (match == null)
         throw new SyntaxError ('Lexer: invalid input before: '+input.substr (position, 12))
 
-  		position = custom.position = regex.lastIndex
+      position = custom.position = regex.lastIndex
 
       let i = 1; while (match [i] == null) i++
       const edge = state.edges [i-1]
@@ -66,7 +65,7 @@ function Lexer (grammar, start, CustomState) {
         throw new Error ('Lexer: no such symbol: '+symbol)
   
       return self
-  	}
+    }
   }
 }
 
@@ -75,16 +74,16 @@ function Lexer (grammar, start, CustomState) {
 // ------------
 
 function compile (grammar) {
-	const compiled = {}
-	for (let state_name in grammar)
-		compiled [state_name] = new State (grammar [state_name], state_name)
-	return compiled
+  const compiled = {}
+  for (let state_name in grammar)
+    compiled [state_name] = new State (grammar [state_name], state_name)
+  return compiled
 }
 
 function State (table, name) {
   this.name = name
-	this.regex = new RegExp ('(' + table.map (fst) .join (')|(') + ')', 'gy')
-	this.edges = table.map ( fn )
+  this.regex = new RegExp ('(' + table.map (fst) .join (')|(') + ')', 'gy')
+  this.edges = table.map ( fn )
 
   function fn (row) {
     return {
