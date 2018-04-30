@@ -1,8 +1,7 @@
 "use strict"
 
-const walk = require ('./walk')
-  , { tag, end, render } = require ('./tagscript')
-
+const { tag, end, render, flatten } = require ('tagscript')
+const log = console.log.bind (console)
 module.exports = { head, renderTokens, flush, flatten }
 
 
@@ -10,7 +9,7 @@ function head (cssfile) { return function (contents)  {
   const header = 
     [ tag ('html')
     ,   tag ('head')
-    ,     stylesheet ('file://'+__dirname+'/'+cssfile)
+    ,     stylesheet (cssfile)
     ,   end ('head')
     ,   tag ('body')
     ,     contents
@@ -34,10 +33,6 @@ function renderTokens (tokens) {
 }
 
 
-//
-const log = console.log.bind (console)
-
-
 function map (fn) { return function* (obj) {
   for (let a of obj) yield fn (a)
 } }
@@ -53,19 +48,3 @@ function flush (obj) {
     log (e)
   }
 }
-
-
-function* flatten (obj) {
-  for (let a of (walk (obj, iterables)))
-    if (a.tag === 'leaf') yield a.value
-}
-
-function iterables (obj) {
-  return obj == null ? walk.leaf (obj)
-    : typeof obj[Symbol.iterator] === 'function' ? walk.shape (obj)
-    : obj instanceof Array ? walk.shape (obj)
-    : walk.leaf (obj)
-}
-
-
-

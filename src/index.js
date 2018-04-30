@@ -1,5 +1,9 @@
 const TinyLexer = require ('./tiny-lexer')
-  , grammar = require ('./grammar')
+  , { grammar, tokens:T } = require ('./grammar')
+  , parse = require ('./parser')
+
+
+const log = console.log.bind (console)
 
 // TODO list:
 // - [x] handle surrogate pairs (not needed)
@@ -13,6 +17,7 @@ const TinyLexer = require ('./tiny-lexer')
 // - [x] added pairing {}, [], () into the lexer
 // - [x] wrap up/ api
 // - [ ] parser/ declarations e.a. 
+// - [x] Compat/ Symbol
 
 function CustomState () {
   this.lineStart = 0
@@ -26,8 +31,13 @@ const cssParser = new TinyLexer (grammar, 'main', CustomState)
 function parseCss (input) {
   return cssParser.tokenize (input)
 }
-  
 
+var test = parse ( parseCss ('bla @media blaa; { foo:blaa } bee baa'))
+
+for (let t of test)
+  log (t)
+
+  
 // coalescing, may even make it into a simple parser then. 
 // <ident><lparen> => <func-start>
 // <name:url><lparen> => <url-start>
@@ -35,14 +45,6 @@ function parseCss (input) {
 // <number>% => <percentage>
 // <string-start><string-data>*<badstring-end> ==> ??
 
-function* coalesced (tokens) {
-  let spare
-  for (let token of tokens) {
-    if token [0] === 'ident-start'
-  }
-}
-
 module.exports = cssParser
 if (typeof window !== 'undefined')
 window.cssParser = module.exports
-  

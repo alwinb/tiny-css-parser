@@ -1,7 +1,7 @@
 "use strict"
 
-const TinyLexer = require ('../src/tiny-lexer')
-  , grammar = require ('../src/grammar')
+const { tokenize } = require ('../src/')
+  , { grammar } = require ('../src/grammar')
   , { head, renderTokens, flush, flatten } = require ('./template')
   , fs = require ('fs')
 
@@ -35,26 +35,16 @@ const samples =
   ]
 
 
-
-function CustomState () {
-  this.lineStart = 0
-  this.line = 0
-  this.stack = []
-  this.quot
-}
-
-const lexer = new TinyLexer (grammar, 'main', CustomState)
-
-function tokenize (input) {
-  return lexer.tokenize (input)
-}
-
 //compose (flush, flatten, head ('colors.css?q'+Math.random()), map (renderTokens), map (tokenize)) (samples)
 
-var stream = tokenize ('hello  \r\n world "badstring\n newline and "string with \\ff\n newline hex esc')
-for (var i of stream)
-  log (i, pr (stream.state))
+// var stream = tokenize ('hello  \r\n {wo[r]ld} "badstring\n newline and "string with \\ff\n newline hex esc')
+// for (var i of stream)
+//   log (i,  (stream.state))
   
 function pr (_) {
   return { line:_.line, col:_.position - _.lineStart }
 }
+
+
+compose (flush, flatten, head ('file://'+__dirname+'/colors.css?o'), map (renderTokens), map (tokenize)) (samples)
+
