@@ -1,0 +1,2 @@
+excludeInFolderSearch = "{git-ignore/*,ignore/*,node_modules/*,dist/*}"
+excludeInFileChooser  = "{git-ignore/*,ignore/*,node_modules/*,dist/*}"
