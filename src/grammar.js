@@ -52,8 +52,9 @@ const tokens =
   , group_end: 'group-end' // ++t
   , group_badend: 'group-badend' // ++t
   , number: 'number' // ++t
-  , sep: 'sep' // ++t
+  , comma: 'comma' // ++t
   , semicolon: 'semicolon' // ++t
+  , colon: 'colon' // ++t
   , column: 'column' // ++t
   , op: 'operator' // ++t
   , space: 'space' // ++t
@@ -92,9 +93,10 @@ const grammar =
   { if: R_number,       emit: T.number,                         },
   { if: R_lgroup,       emit: group_start,                      },
   { if: R_rgroup,       emit: group_end,                        },
-  { if: '[,:]',         emit: T.sep,                            }, // In the spec these are separate tokens
+  { if: ',',            emit: T.comma                           },
   { if: ';',            emit: T.semicolon,                      },
-  { if: R_op,           emit: T.op,                             }, // likewise
+  { if: ':',            emit: T.colon,                          },
+  { if: R_op,           emit: T.op,                             }, // In the spec these are separate tokens
   { if: '[|][|]',       emit: T.column,                         },
   { if: '<!--',         emit: T.CDO,                            },
   { if: '-->',          emit: T.CDC,                            },
