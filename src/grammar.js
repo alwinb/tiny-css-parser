@@ -15,11 +15,11 @@ const R_rgroup = '[)}\\]]'
 const R_op = '[|~^*$]='
 
 // Escapes
-const R_hex_esc = '\\\\[0-9A-Fa-f]{1,6}'+R_newline+'?'
+const R_hex_esc = '\\\\[0-9A-Fa-f]{1,6}' + R_newline + '?'
 
 // Strings
 const R_string = "[^\n\r\f\\\\'\"]+"
-const R_nl_esc = '\\\\'+R_newline
+const R_nl_esc = '\\\\' + R_newline
 
 // Numbers
 const R_fract = '(?:\\.[0-9]+)'
@@ -28,98 +28,103 @@ const R_number = '[+-]?(?:' + R_fract + '|[0-9]+' + R_fract + '?)' + R_opt_exp
 
 // Identifiers
 // Using a lookahead of max 3 chars
-const R_starts_ident = '(?=[-]?(?:[A-Za-z_\u0080-\uFFFF]|\\\\[^\n\r\f]))'
-const R_hash_lookahead = '(?=(?:[A-Za-z0-9\\-_\u0080-\uFFFF]|\\\\[^\n\r\f]))'
+const R_starts_ident = '(?=[-]?(?:[A-Za-z_\\u0080-\\uFFFF]|\\\\[^\n\r\f]))'
+const R_hash_lookahead = '(?=(?:[A-Za-z0-9\\-_\\u0080-\\uFFFF]|\\\\[^\n\r\f]))'
 
-const R_at_start = '@'+R_starts_ident
-const R_hash_start = '#'+R_hash_lookahead
-const R_hashid_start = '#'+R_starts_ident
-const R_ident_start = '.{0}'+R_starts_ident
-const R_ident = '[A-Za-z0-9\\-_\u0080-\uFFFF]+'
+const R_at_start = '@' + R_starts_ident
+const R_hash_start = '#' + R_hash_lookahead
+const R_hashid_start = '#' + R_starts_ident
+const R_ident_start = '.{0}' + R_starts_ident
+const R_ident = '[A-Za-z0-9\\-_\\u0080-\\uFFFF]+'
 
 
 // ### Token types
 
 //let t = 0
-const T_CDC = 'CDC' // ++t
-  , T_CDO = 'CDO' // ++t
-  , T_delim = 'delim' // ++t
-  , T_delim_invalid = 'delim-invalid' // ++t
-  , T_escape_char = 'escape-char' // ++t
-  , T_escape_hex = 'escape-hex' // ++t
-  , T_group_start = 'group-start' // ++t
-  , T_group_end = 'group-end' // ++t
-  , T_group_noend = 'group-noend' // ++t
-  , T_number = 'number' // ++t
-  , T_sep = 'sep' // ++t
-  , T_column = 'column' // ++t
-  , T_op = 'operator' // ++t
-  , T_space = 'space' // ++t
-  , T_newline = 'newline' // ++t
-  , T_comment_start = 'comment-start' // ++t
-  , T_comment_data = 'comment-data' // ++t
-  , T_comment_end = 'comment-end' // ++t
-  , T_at_start = 'ident-start-at' // ++t
-  , T_hash_start = 'ident-start-hash' // ++t
-  , T_hashid_start = 'ident-start-hashid' // ++t
-  , T_ident_start = 'ident-start' // ++t
-  , T_ident_data = 'ident-data' // ++t
-  , T_ident_end = 'ident-end' // ++t
-  , T_string_start = 'string-start' // ++t
-  , T_string_data = 'string-data' // ++t
-  , T_ignore_newline = 'ignore-newline' // ++t
-  , T_escape_eof = 'escape-eof' // ++t
-  , T_string_end = 'string-end' // ++t
-  , T_string_end_bad = 'string-end-bad' // ++t
+const tokens =
+  { CDC: 'CDC' // ++t
+  , CDO: 'CDO' // ++t
+  , delim: 'delim' // ++t
+  , delim_invalid: 'delim-invalid' // ++t
+  , escape_char: 'escape-char' // ++t
+  , escape_hex: 'escape-hex' // ++t
+  , group_start: 'group-start' // ++t
+  , group_end: 'group-end' // ++t
+  , group_badend: 'group-badend' // ++t
+  , number: 'number' // ++t
+  , sep: 'sep' // ++t
+  , semicolon: 'semicolon' // ++t
+  , column: 'column' // ++t
+  , op: 'operator' // ++t
+  , space: 'space' // ++t
+  , newline: 'newline' // ++t
+  , comment_start: 'comment-start' // ++t
+  , comment_data: 'comment-data' // ++t
+  , comment_end: 'comment-end' // ++t
+  , at_start: 'ident-start-at' // ++t
+  , hash_start: 'ident-start-hash' // ++t
+  , hashid_start: 'ident-start-hashid' // ++t
+  , ident_start: 'ident-start' // ++t
+  , ident_data: 'ident-data' // ++t
+  , ident_end: 'ident-end' // ++t
+  , string_start: 'string-start' // ++t
+  , string_data: 'string-data' // ++t
+  , ignore_newline: 'ignore-newline' // ++t
+  , escape_eof: 'escape-eof' // ++t
+  , string_end: 'string-end' // ++t
+  , string_end_bad: 'string-end-bad' // ++t
+  }
 
 
 // ### The actual grammar
 
+const T = tokens
 const grammar = 
 { main: [
-  { if: '/[*]',         emit: T_comment_start,  goto: 'comment' },
-  { if: '["\']',        emit: T_string_start,   goto:  quote    },
-  { if: R_ident_start,  emit: T_ident_start,    goto: 'ident'   },
-  { if: R_hashid_start, emit: T_hashid_start,   goto: 'ident'   },
-  { if: R_hash_start,   emit: T_hash_start,     goto: 'ident'   },
-  { if: R_at_start,     emit: T_at_start,       goto: 'ident'   },
-  { if: R_space,        emit: T_space,                          },
-  { if: R_newline,      emit: nl (T_newline),                   },
-  { if: R_number,       emit: T_number,                         },
+  { if: '/[*]',         emit: T.comment_start,  goto: 'comment' },
+  { if: '["\']',        emit: T.string_start,   goto:  quote    },
+  { if: R_ident_start,  emit: T.ident_start,    goto: 'ident'   },
+  { if: R_hashid_start, emit: T.hashid_start,   goto: 'ident'   },
+  { if: R_hash_start,   emit: T.hash_start,     goto: 'ident'   },
+  { if: R_at_start,     emit: T.at_start,       goto: 'ident'   },
+  { if: R_space,        emit: T.space,                          },
+  { if: R_newline,      emit: nl (T.newline),                   },
+  { if: R_number,       emit: T.number,                         },
   { if: R_lgroup,       emit: group_start,                      },
   { if: R_rgroup,       emit: group_end,                        },
-  { if: '[,:;]',        emit: T_sep,                            }, // In the spec these are separate tokens
-  { if: R_op,           emit: T_op,                             }, // likewise
-  { if: '[|][|]',       emit: T_column,                         },
-  { if: '<!--',         emit: T_CDO,                            },
-  { if: '-->',          emit: T_CDC,                            },
-  { if: '\\\\',         emit: T_delim_invalid,                  },
-  { if: '.',            emit: T_delim,                          }]
+  { if: '[,:]',         emit: T.sep,                            }, // In the spec these are separate tokens
+  { if: ';',            emit: T.semicolon,                      },
+  { if: R_op,           emit: T.op,                             }, // likewise
+  { if: '[|][|]',       emit: T.column,                         },
+  { if: '<!--',         emit: T.CDO,                            },
+  { if: '-->',          emit: T.CDC,                            },
+  { if: '\\\\',         emit: T.delim_invalid,                  },
+  { if: '.',            emit: T.delim,                          }]
 
 , comment: [
-  { if: '[*]/',         emit: T_comment_end,    goto: 'main'    },
-  { if: '.[^*]*',       emit: T_comment_data                    }]
+  { if: '[*]/',         emit: T.comment_end,    goto: 'main'    },
+  { if: '.[^*]*',       emit: T.comment_data                    }]
 
 , string: [
   { if: '["\']',        emit: quote_emit,       goto: unquote   },
-  { if: '$',            emit: T_string_end,     goto: 'main'    },
-  { if: R_string,       emit: T_string_data                     },
-  { if: R_nl_esc,       emit: nl (T_ignore_newline)             },
-  { if: R_hex_esc,      emit: nl (T_escape_hex)                 }, // FIXME newline count
-  { if: '\\\\$',        emit: T_escape_eof                      },
-  { if: '\\\\.',        emit: T_escape_char                     },
-  {                     emit: T_string_end_bad, goto: 'main'    }]
+  { if: '$',            emit: T.string_end,     goto: 'main'    },
+  { if: R_string,       emit: T.string_data                     },
+  { if: R_nl_esc,       emit: nl (T.ignore_newline)             },
+  { if: R_hex_esc,      emit: nl (T.escape_hex)                 }, // FIXME newline count
+  { if: '\\\\$',        emit: T.escape_eof                      },
+  { if: '\\\\.',        emit: T.escape_char                     },
+  {                     emit: T.string_end_bad, goto: 'main'    }]
 
 , ident: [
-  { if: R_ident,        emit: T_ident_data                      },
-  { if: R_hex_esc,      emit: nl (T_escape_hex)                 }, // FIXME newline count
-  { if: '\\\\.',        emit: T_escape_char                     },
-  {                     emit: T_ident_end,      goto: 'main'    }]
+  { if: R_ident,        emit: T.ident_data                      },
+  { if: R_hex_esc,      emit: nl (T.escape_hex)                 }, // FIXME newline count
+  { if: '\\\\.',        emit: T.escape_char                     },
+  {                     emit: T.ident_end,      goto: 'main'    }]
 }
 
 
-// Additional state management, to
-//  supplement the grammar/ state machine. 
+// Additional state management, to count newlines
+//  and to track quotation style and open groups. 
 
 function nl (type) { return function (chunk) {
   this.lineStart = this.position
@@ -127,13 +132,25 @@ function nl (type) { return function (chunk) {
   return type
 } }
 
+
+
+function ident_data (chunk) {
+  this.buffer += chunk
+}
+
+function ident_escape_char (chunk) {
+  this.buffer += '' // TODO
+}
+
+
+
 function quote (chunk) {
   this.quot = chunk
   return 'string'
 }
 
 function quote_emit (chunk) {
-  return chunk !== this.quot ? T_string_data : T_string_end
+  return chunk !== this.quot ? T.string_data : T.string_end
 }
 
 function unquote (chunk) {
@@ -148,17 +165,17 @@ const mirror =
 
 function group_start (chunk) {
   this.stack.push (chunk)
-  return T_group_start
+  return T.group_start
 }
 
 function group_end (chunk) {
   const s = this.stack
   if (mirror [chunk] === s [s.length-1]) {
     s.pop ()
-    return T_group_end
+    return T.group_end
   }
-  return T_group_noend
+  return T.group_badend
 }
 
 
-module.exports = grammar
+module.exports = { grammar:grammar, tokens:tokens }

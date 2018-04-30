@@ -16,6 +16,8 @@ module.exports = Lexer
 // The Lexer runtime
 // -----------------
 
+let _iterator = Symbol !== undefined ? Symbol.iterator : '@@iterator'
+
 function Lexer (grammar, start, CustomState) {
   const states = compile (grammar)
   this.tokenize = tokenize
@@ -26,11 +28,8 @@ function Lexer (grammar, start, CustomState) {
       , state = states [symbol]
       , position = 0
 
-    const self = { 
-      value: null, done: false, next: next, state: custom,
-      [Symbol.iterator]: function () { return self }
-    }
-
+    const self = { value: null, done: false, next: next, state: custom }
+    self [_iterator] = function () { return self }
     return self
 
     function next () {
@@ -45,7 +44,7 @@ function Lexer (grammar, start, CustomState) {
       }
 
       if (match == null)
-        throw new SyntaxError ('Lexer: invalid input before: '+input.substr (position, 12))
+        throw new SyntaxError ('Lexer: invalid input before: ' + input.substr (position, 12))
 
       position = custom.position = regex.lastIndex
 
@@ -53,7 +52,7 @@ function Lexer (grammar, start, CustomState) {
       const edge = state.edges [i-1]
 
       self.value = typeof edge.emit === 'function'
-        ? [edge.emit.call (custom, match[i]), match [i]]
+        ? [edge.emit.call (custom, match [i]), match [i]]
         : [edge.emit, match [i]]
 
       symbol = typeof edge.goto === 'function'
@@ -83,7 +82,7 @@ function compile (grammar) {
 function State (table, name) {
   this.name = name
   this.regex = new RegExp ('(' + table.map (fst) .join (')|(') + ')', 'gy')
-  this.edges = table.map ( fn )
+  this.edges = table.map (fn)
 
   function fn (row) {
     return {
