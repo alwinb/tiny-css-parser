@@ -19,6 +19,10 @@ const log = console.log.bind (console)
 // - [ ] parser/ declarations e.a. 
 // - [x] Compat/ Symbol
 
+// OK. Parsing. I wish to parameterise how atrules contents are parsed. 
+// At the moment.. qrule contents is always parsed as a list of decls and atrules. 
+// As for atrules, hmm may do the same. 
+
 function CustomState () {
   this.lineStart = 0
   this.line = 0
@@ -32,7 +36,12 @@ function parseCss (input) {
   return cssParser.tokenize (input)
 }
 
-var test = parse ( parseCss ('bla @media blaa; { foo:blaa } bee baa'))
+var sample = '@media blaa; one { foo:blaa; fee:haa } bee baa'
+var sample = 'abc { foo:bar; baz:paz; Boo;bah }'
+var sample = 'prelude { @abc { foo:bar } asd; baz:paz; Boo;bah } }'
+var sample = 'pre { @foo { baz { bar:poo } } }'
+
+var test = parse ( parseCss (sample))
 
 for (let t of test)
   log (t)
@@ -48,3 +57,4 @@ for (let t of test)
 module.exports = cssParser
 if (typeof window !== 'undefined')
 window.cssParser = module.exports
+

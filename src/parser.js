@@ -44,7 +44,7 @@ function* parse (tokens) {
     let t = token [0], c = token [1]
     let top = stack.length - 1
     let state = stack [top]
-    log ('\t\t', stack, token)
+    //log ('\t\t', stack, token)
 
     if (t === T.space || t === T.newline)
       yield token
