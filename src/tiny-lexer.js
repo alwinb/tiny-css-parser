@@ -21,15 +21,23 @@ let _iterator = Symbol !== undefined ? Symbol.iterator : '@@iterator'
 function Lexer (grammar, start, CustomState) {
   const states = compile (grammar)
   this.tokenize = tokenize
+  this.tokenise = tokenize
+
+  function LazyTokenStream (input) {
+    this [_iterator] = function () { return iterator (input) }
+  }
 
   function tokenize (input) {
+    return new LazyTokenStream (input)
+  }
+
+  function iterator (input) {
     const custom = new CustomState ()
     let symbol = start
       , state = states [symbol]
       , position = 0
 
     const self = { value: null, done: false, next: next, state: custom }
-    self [_iterator] = function () { return self }
     return self
 
     function next () {
