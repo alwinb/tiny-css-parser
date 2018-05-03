@@ -9,13 +9,14 @@ const tinylex = require ('./tiny-lexer')
 // Each regular expression corresponds to a transition between states. 
 
 const R_space = '[\t ]+'
+const R_space1 = '[\t ]'
 const R_newline = '(?:\r?\n|[\r\f])'
 const R_lgroup = '[({[]'
 const R_rgroup = '[)}\\]]'
 const R_op = '[|~^*$]='
 
 // Escapes
-const R_hex_esc = '\\\\[0-9A-Fa-f]{1,6}' + R_newline + '?'
+const R_hex_esc = '\\\\[0-9A-Fa-f]{1,6}'
 
 // Strings
 const R_string = "[^\n\r\f\\\\'\"]+"
@@ -48,9 +49,9 @@ const tokens =
   , delim_invalid: 'delim-invalid' // ++t
   , escape_char: 'escape-char' // ++t
   , escape_hex: 'escape-hex' // ++t
+  , hex_end: 'escape-hex-end' // ++t
   , group_start: 'group-start' // ++t
   , group_end: 'group-end' // ++t
-  , group_badend: 'group-badend' // ++t
   , number: 'number' // ++t
   , comma: 'comma' // ++t
   , semicolon: 'semicolon' // ++t
@@ -60,16 +61,16 @@ const tokens =
   , space: 'space' // ++t
   , newline: 'newline' // ++t
   , comment_start: 'comment-start' // ++t
-  , comment_data: 'comment-data' // ++t
+  , comment_chars: 'comment-chars' // ++t
   , comment_end: 'comment-end' // ++t
   , at_start: 'ident-start-at' // ++t
   , hash_start: 'ident-start-hash' // ++t
   , hashid_start: 'ident-start-hashid' // ++t
   , ident_start: 'ident-start' // ++t
-  , ident_data: 'ident-data' // ++t
+  , ident_chars: 'ident-chars' // ++t
   , ident_end: 'ident-end' // ++t
   , string_start: 'string-start' // ++t
-  , string_data: 'string-data' // ++t
+  , string_chars: 'string-chars' // ++t
   , ignore_newline: 'ignore-newline' // ++t
   , escape_eof: 'escape-eof' // ++t
   , string_end: 'string-end' // ++t
@@ -91,8 +92,8 @@ const grammar =
   { if: R_space,        emit: T.space,                          },
   { if: R_newline,      emit: nl (T.newline),                   },
   { if: R_number,       emit: T.number,                         },
-  { if: R_lgroup,       emit: group_start,                      },
-  { if: R_rgroup,       emit: group_end,                        },
+  { if: R_lgroup,       emit: T.group_start,                    },
+  { if: R_rgroup,       emit: T.group_end,                      },
   { if: ',',            emit: T.comma                           },
   { if: ';',            emit: T.semicolon,                      },
   { if: ':',            emit: T.colon,                          },
@@ -105,23 +106,29 @@ const grammar =
 
 , comment: [
   { if: '[*]/',         emit: T.comment_end,    goto: 'main'    },
-  { if: '.[^*]*',       emit: T.comment_data                    }]
+  { if: '.[^*]*',       emit: T.comment_chars                   }]
 
 , string: [
   { if: '["\']',        emit: quote_emit,       goto: unquote   },
   { if: '$',            emit: T.string_end,     goto: 'main'    },
-  { if: R_string,       emit: T.string_data                     },
+  { if: R_string,       emit: T.string_chars                    },
   { if: R_nl_esc,       emit: nl (T.ignore_newline)             },
-  { if: R_hex_esc,      emit: nl (T.escape_hex)                 }, // FIXME newline count
+  { if: R_hex_esc,      emit: T.escape_hex,     goto: hex_end   },
   { if: '\\\\$',        emit: T.escape_eof                      },
   { if: '\\\\.',        emit: T.escape_char                     },
   {                     emit: T.string_end_bad, goto: 'main'    }]
 
 , ident: [
-  { if: R_ident,        emit: T.ident_data                      },
-  { if: R_hex_esc,      emit: nl (T.escape_hex)                 }, // FIXME newline count
+  { if: R_ident,        emit: T.ident_chars                     },
+  { if: R_hex_esc,      emit: T.escape_hex,     goto: hex_end   },
   { if: '\\\\.',        emit: T.escape_char                     },
   {                     emit: T.ident_end,      goto: 'main'    }]
+
+, hex_end: [
+  { if: R_space1,       emit: T.hex_end,        goto: context   },
+  { if: R_newline,      emit: nl (T.hex_end),   goto: context   },
+  {                     emit: T.hex_end,        goto: context   }]
+
 }
 
 
@@ -134,17 +141,14 @@ function nl (type) { return function (chunk) {
   return type
 } }
 
-
-
-function ident_data (chunk) {
-  this.buffer += chunk
+function hex_end () {
+  this.context = this.symbol
+  return 'hex_end'
 }
 
-function ident_escape_char (chunk) {
-  this.buffer += '' // TODO
+function context () {
+  return this.context
 }
-
-
 
 function quote (chunk) {
   this.quot = chunk
@@ -152,7 +156,7 @@ function quote (chunk) {
 }
 
 function quote_emit (chunk) {
-  return chunk !== this.quot ? T.string_data : T.string_end
+  return chunk !== this.quot ? T.string_chars : T.string_end
 }
 
 function unquote (chunk) {
@@ -161,23 +165,22 @@ function unquote (chunk) {
   return 'main'
 }
 
-const mirror = 
-  { '(':')', '{':'}', '[':']'
-  , ')':'(', ']':'[', '}':'{' }
-
-function group_start (chunk) {
-  this.stack.push (chunk)
-  return T.group_start
-}
-
-function group_end (chunk) {
-  const s = this.stack
-  if (mirror [chunk] === s [s.length-1]) {
-    s.pop ()
-    return T.group_end
-  }
-  return T.group_badend
-}
-
+// const mirror =
+//   { '(':')', '{':'}', '[':']'
+//   , ')':'(', ']':'[', '}':'{' }
+//
+// function group_start (chunk) {
+//   this.stack.push (chunk)
+//   return T.group_start
+// }
+//
+// function group_end (chunk) {
+//   const s = this.stack
+//   if (mirror [chunk] === s [s.length-1]) {
+//     s.pop ()
+//     return T.group_end
+//   }
+//   return T.group_badend
+// }
 
 module.exports = { grammar:grammar, tokens:tokens }

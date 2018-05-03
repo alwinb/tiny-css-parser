@@ -35,10 +35,11 @@ const MAIN = 'MAIN' // ++i
   , ATRULE_PRELUDE = 'ATRULE_PRELUDE' // ++i
   , QRULE_PRELUDE = 'QRULE_PRELUDE' // ++i
 
+
 function* parse (tokens) {
   const stack = [MAIN]
+  const contexts = []
   let P = parserTokens
-  let context_end // FIXME needs to be stored on stack
 
   for (let token of tokens) {
     let t = token [0], c = token [1]
@@ -62,25 +63,25 @@ function* parse (tokens) {
       case BODY:
       case DECLS:
         yield [P.body_end, c]
-        yield [context_end]
+        yield [contexts.pop ()]
         stack.pop ()
       break
       case DECL_COLON:
         yield [P.decl_end_invalid]
         yield [P.body_end, c]
-        yield [context_end]
+        yield [contexts.pop ()]
         stack.pop ()
       break
       case DECL_VALUE:
         yield [P.decl_end]
         yield [P.body_end, c]
-        yield [context_end]
+        yield [contexts.pop ()]
         stack.pop ()
       break
       case DECL_INVALID:
         yield [P.decl_end_invalid]
         yield [P.body_end, c]
-        yield [context_end]
+        yield [contexts.pop ()]
         stack.pop ()
       break
       case BRACES:
@@ -92,7 +93,7 @@ function* parse (tokens) {
     }
 
     else if (t === T.at_start && (state === MAIN || state === BODY || state === DECLS)) {
-      context_end = P.atrule_end
+      contexts.push (P.atrule_end)
       stack.push (ATRULE_NAME)
       yield [P.atrule_start]
       yield [P.name_start, c]
@@ -106,12 +107,12 @@ function* parse (tokens) {
 
     else if (t === T.ident_start && state === DECLS) {
       yield [P.decl_start]
-      yield token
+      yield [P.name_start, c]
     }
 
     else if (t === T.ident_end && state === DECLS) {
       stack [top] = DECL_COLON
-      yield token
+      yield [P.name_end, c]
     }
 
     // Careful with the nested else here
@@ -124,7 +125,7 @@ function* parse (tokens) {
       // Conditional actions
 
       if (state === MAIN || state === BODY) {
-        context_end = P.qrule_end
+        contexts.push (P.qrule_end)
         yield [P.qrule_start]
         yield [P.prelude_start]
         stack.push (QRULE_PRELUDE)

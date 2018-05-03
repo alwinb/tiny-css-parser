@@ -55,7 +55,7 @@ function Lexer (grammar, start, CustomState) {
         ? [edge.emit.call (custom, match [i]), match [i]]
         : [edge.emit, match [i]]
 
-      symbol = typeof edge.goto === 'function'
+      symbol = custom.symbol = typeof edge.goto === 'function'
         ? edge.goto.call (custom, match [i])
         : edge.goto
 
