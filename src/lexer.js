@@ -1,5 +1,5 @@
 "use strict"
-const tinylex = require ('./tiny-lexer')
+const TinyLexer = require ('./tiny-lexer')
 
 // A tiny-lexer based tokenizer for CSS
 // ====================================
@@ -135,6 +135,15 @@ const grammar =
 // Additional state management, to count newlines
 //  and to track quotation style and open groups. 
 
+function CustomState () {
+  this.symbol = 'main'
+  this.position = 0
+  this.lineStart = 0
+  this.line = 0
+  this.quot
+  this.context
+}
+
 function nl (type) { return function (chunk) {
   this.lineStart = this.position
   this.line++
@@ -165,22 +174,9 @@ function unquote (chunk) {
   return 'main'
 }
 
-// const mirror =
-//   { '(':')', '{':'}', '[':']'
-//   , ')':'(', ']':'[', '}':'{' }
-//
-// function group_start (chunk) {
-//   this.stack.push (chunk)
-//   return T.group_start
-// }
-//
-// function group_end (chunk) {
-//   const s = this.stack
-//   if (mirror [chunk] === s [s.length-1]) {
-//     s.pop ()
-//     return T.group_end
-//   }
-//   return T.group_badend
-// }
 
-module.exports = { grammar:grammar, tokens:tokens }
+// ### The actual lexer
+// Wrapping it all up together
+
+const lexer = new TinyLexer (grammar, 'main', CustomState)
+module.exports = { grammar:grammar, tokens:tokens, tokenise:lexer.tokenize, tokenize:lexer.tokenize }

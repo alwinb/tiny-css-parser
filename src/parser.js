@@ -1,6 +1,5 @@
 "use strict"
-module.exports = parse
-const { tokens:T } = require ('./grammar')
+const { tokens:T } = require ('./lexer')
 const log = console.log.bind (console)
 
 const parserTokens = {
@@ -40,6 +39,7 @@ function* parse (tokens) {
   const stack = [MAIN]
   const contexts = []
   let P = parserTokens
+  let spare
 
   for (let token of tokens) {
     let t = token [0], c = token [1]
@@ -113,6 +113,12 @@ function* parse (tokens) {
     else if (t === T.ident_end && state === DECLS) {
       stack [top] = DECL_COLON
       yield [P.name_end, c]
+    }
+
+    else if (t === T.number) {
+      spare = token
+      yield token
+      // TODO Wait for the next token(s) to merge into percentage/ dimension
     }
 
     // Careful with the nested else here
@@ -219,3 +225,4 @@ function* parse (tokens) {
 }
 
 
+module.exports = { parse:parse, tokens:parserTokens }

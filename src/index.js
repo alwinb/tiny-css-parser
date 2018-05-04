@@ -1,20 +1,11 @@
 const TinyLexer = require ('./tiny-lexer')
-  , { grammar, tokens:T } = require ('./grammar')
-  , parse = require ('./parser')
+  , { tokenize, tokens:T } = require ('./lexer')
+  , _parse = require ('./parser').parse
 
 const log = console.log.bind (console)
 
-function CustomState () {
-  this.lineStart = 0
-  this.line = 0
-  this.quot
-  this.context
-}
-
-const lexer = new TinyLexer (grammar, 'main', CustomState)
-
-function tokenize (input) {
-  return lexer.tokenize (input)
+function parse (input) {
+  return _parse (tokenize (input))
 }
 
 var sample = '@media blaa; one { foo:blaa; fee:haa } bee baa'
@@ -22,10 +13,23 @@ var sample = 'ab\\0c c { foo:bar; baz:paz; Boo;bah }'
 var sample = 'prelude { @abc { foo:bar } asd; baz:paz; Boo;bah } }'
 var sample = 'pre { @foo { baz { bar:poo } } }'
 
-var test = parse ( tokenize (sample))
-
+var test = tokenize (sample)
 for (let t of test)
   log (t)
+
+log (test)
+
+	var stream = parse ('#menu { padding:0; margin:; display:block }')
+
+	for (var token of stream)
+	  console.log (token)
+
+// var stream = tokenize (sample) .values ()
+// while (!stream.done) {
+//   let column = stream.state.position - stream.state.lineStart
+//   let t = stream.next ()
+//   log ({ line:stream.state.line, column:column }, t.value)
+// }
 
 // coalescing, may even make it into a simple parser then. 
 // <ident><lparen> => <func-start>
@@ -41,4 +45,4 @@ module.exports = {
 }
 
 if (typeof window !== 'undefined')
-window.lexer = module.exports
+window.cssParser = module.exports

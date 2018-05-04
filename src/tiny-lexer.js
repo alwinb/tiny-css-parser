@@ -23,22 +23,22 @@ function Lexer (grammar, start, CustomState) {
   this.tokenize = tokenize
   this.tokenise = tokenize
 
-  function LazyTokenStream (input) {
-    this [_iterator] = function () { return iterator (input) }
-  }
-
   function tokenize (input) {
-    return new LazyTokenStream (input)
+    return new TokenIterator (input)
   }
 
-  function iterator (input) {
+  function TokenIterator (input) {
     const custom = new CustomState ()
     let symbol = start
-      , state = states [symbol]
       , position = 0
+      , state = states [symbol]
+      , self = this
 
-    const self = { value: null, done: false, next: next, state: custom }
-    return self
+    this.value
+    this.done = false
+    this.next = next
+    this.state = custom
+    this [_iterator] = function () { return self }
 
     function next () {
       const regex = state.regex

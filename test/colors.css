@@ -39,7 +39,7 @@ background (black) #141414 */
 .CDC, 
 .CDO, 
 .comment-start, 
-.comment-data, 
+.comment-chars, 
 .comment-end
  {
 	color:#746D74;
@@ -49,7 +49,7 @@ background (black) #141414 */
 
 .string,
 .string-start,
-.string-data,
+.string-chars,
 .string-end
  {
 	color:#8F9D6A;
@@ -93,7 +93,7 @@ background (black) #141414 */
 }
 
 .ident,
-.ident-data
+.ident-chars
 {
 	color:#D4BD7F; /* light brown */
 	color:#B38243; /* orange-brown */
