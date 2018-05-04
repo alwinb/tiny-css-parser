@@ -1,11 +1,10 @@
 "use strict"
 
-const { tokenize } = require ('../src/lexer')
+const { tokenize, parse } = require ('../src')
   , { head, renderTokens, flush, flatten } = require ('./template')
   , fs = require ('fs')
 
 const log = console.log.bind (console)
-
 
 function compose (fn1, fn2, fn3, __) { 
   var fns = arguments
@@ -19,7 +18,6 @@ function map (fn) { return function* (obj) {
 
 
 // Test
-// ====
 
 const samples =
   [ ' @charset utf8; @me {} #12038, #-ai /*comm */ #uu \n "a string with es\\40capes and \' such \\\n indeed"'
@@ -34,14 +32,24 @@ const samples =
   , fs.readFileSync ('./colors.css')
   ]
 
-var stream = tokenize ('@test { foo:bar; }')
-for (var i of stream)
-  log (i,  info (stream))
-
 function info (stream) {
   return { line:stream.state.line, col:stream.state.position - stream.state.lineStart }
 }
 
-let r = Math.random ()
+//let r = Math.random ()
 //compose (flush, flatten, head ('file://'+__dirname+'/colors.css?'+r), map (renderTokens), map (tokenize)) (samples)
 
+
+var sample = '@media blaa; one { foo:blaa; fee:haa } bee baa'
+var sample = 'ab\\0c c { foo:bar; baz:paz; Boo;bah }'
+var sample = 'prelude { @abc { foo:bar } asd; baz:paz; Boo;bah } }'
+var sample = 'pre { @foo { baz { bar:poo } } }'
+
+var test = tokenize (sample)
+for (let t of test)
+  log (t)
+
+var stream = parse ('#menu { padding:0; margin:; display:block }')
+log (stream.state)
+for (var token of stream)
+  console.log (token, stream.state)
