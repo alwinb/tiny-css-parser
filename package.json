@@ -1,0 +1,34 @@
+{
+  "name": "tiny-css-parser",
+  "version": "0.7.0",
+  "description": "A very small css parser",
+  "main": "src/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tagscript": "^0.2.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alwinb/tiny-css-parser.git"
+  },
+  "keywords": [
+    "CSS",
+    "parser",
+    "tokenizer",
+    "stream",
+    "tiny",
+    "small"
+  ],
+  "author": "Alwin Blok",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alwinb/tiny-css-parser/issues"
+  },
+  "homepage": "https://github.com/alwinb/tiny-css-parser#readme"
+}
