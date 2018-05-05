@@ -1,7 +1,7 @@
 "use strict"
 
 const { tokenize, parse } = require ('../src')
-  , { head, renderTokens, flush, flatten } = require ('./template')
+  , { head, renderTokens, flush } = require ('./template')
   , fs = require ('fs')
 
 const log = console.log.bind (console)
@@ -37,7 +37,7 @@ function info (stream) {
 }
 
 //let r = Math.random ()
-//compose (flush, flatten, head ('file://'+__dirname+'/colors.css?'+r), map (renderTokens), map (tokenize)) (samples)
+//compose (flush, head ('file://'+__dirname+'/colors.css?'+r), map (renderTokens), map (tokenize)) (samples)
 
 
 var sample = '@media blaa; one { foo:blaa; fee:haa } bee baa'

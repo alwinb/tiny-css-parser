@@ -1,8 +1,8 @@
 "use strict"
 
-const { tag, end, render, flatten } = require ('tagscript')
+const { tag, end, renderTo } = require ('tagscript')
 const log = console.log.bind (console)
-module.exports = { head, renderTokens, flush, flatten }
+module.exports = { head, renderTokens, flush }
 
 
 function head (cssfile) { return function (contents)  {
@@ -40,8 +40,7 @@ function map (fn) { return function* (obj) {
 
 function flush (obj) {
   try {
-    for (let a of obj)
-      process.stdout.write (render (a))
+    renderTo (process.stdout, obj)
     process.exit (205)
   }
   catch (e) {
