@@ -1,5 +1,5 @@
 "use strict"
-const { tokens:T } = require ('./lexer')
+const { tokens } = require ('./lexer')
 const log = console.log.bind (console)
 
 const parserTokens = {
@@ -13,13 +13,16 @@ const parserTokens = {
   prelude_end: 'prelude-end',
   body_start: 'body-start',
   body_end: 'body-end',
-  decl_start: 'decl-start',
-  decl_end: 'decl-end',
+  declaration_start: 'decl-start',
+  declaration_end: 'decl-end',
+  declaration_end_invalid: 'decl-end-invalid',
   value_start: 'value-start',
   value_end: 'value-end',
-  decl_end_invalid: 'decl-end-invalid',
   group_badend: 'group-badend'
 }
+
+for (let a in tokens)
+  parserTokens [a] = tokens [a]
 
 const MAIN = 'MAIN' // ++i
   , BODY = 'BODY' // ++i
@@ -38,7 +41,7 @@ const MAIN = 'MAIN' // ++i
 function* parse (tokens) {
   const stack = [MAIN]
   const contexts = []
-  let P = parserTokens
+  let T = parserTokens
   let spare
 
   for (let token of tokens) {
@@ -55,32 +58,32 @@ function* parse (tokens) {
 
     else if (c === '}') switch (state) {
       case MAIN:
-        yield [P.qrule_start]
-        yield [P.prelude_start]
-        yield [P.group_badend, c]
+        yield [T.qrule_start]
+        yield [T.prelude_start]
+        yield [T.group_badend, c]
         stack.push (QRULE_PRELUDE)
       break
       case BODY:
       case DECLS:
-        yield [P.body_end, c]
+        yield [T.body_end, c]
         yield [contexts.pop ()]
         stack.pop ()
       break
       case DECL_COLON:
-        yield [P.decl_end_invalid]
-        yield [P.body_end, c]
+        yield [T.declaration_end_invalid]
+        yield [T.body_end, c]
         yield [contexts.pop ()]
         stack.pop ()
       break
       case DECL_VALUE:
-        yield [P.decl_end]
-        yield [P.body_end, c]
+        yield [T.declaration_end]
+        yield [T.body_end, c]
         yield [contexts.pop ()]
         stack.pop ()
       break
       case DECL_INVALID:
-        yield [P.decl_end_invalid]
-        yield [P.body_end, c]
+        yield [T.declaration_end_invalid]
+        yield [T.body_end, c]
         yield [contexts.pop ()]
         stack.pop ()
       break
@@ -89,30 +92,30 @@ function* parse (tokens) {
         stack.pop ()
       break
       default:
-        yield [P.group_badend, c]
+        yield [T.group_badend, c]
     }
 
     else if (t === T.at_start && (state === MAIN || state === BODY || state === DECLS)) {
-      contexts.push (P.atrule_end)
+      contexts.push (T.atrule_end)
       stack.push (ATRULE_NAME)
-      yield [P.atrule_start]
-      yield [P.name_start, c]
+      yield [T.atrule_start]
+      yield [T.name_start, c]
     }
 
     else if (t === T.ident_end && state === ATRULE_NAME) {
       stack [top] = ATRULE_PRELUDE
-      yield [P.name_end, c]
-      yield [P.prelude_start]
+      yield [T.name_end, c]
+      yield [T.prelude_start]
     }
 
     else if (t === T.ident_start && state === DECLS) {
-      yield [P.decl_start]
-      yield [P.name_start, c]
+      yield [T.declaration_start]
+      yield [T.name_start, c]
     }
 
     else if (t === T.ident_end && state === DECLS) {
       stack [top] = DECL_COLON
-      yield [P.name_end, c]
+      yield [T.name_end, c]
     }
 
     else if (t === T.number) {
@@ -131,9 +134,9 @@ function* parse (tokens) {
       // Conditional actions
 
       if (state === MAIN || state === BODY) {
-        contexts.push (P.qrule_end)
-        yield [P.qrule_start]
-        yield [P.prelude_start]
+        contexts.push (T.qrule_end)
+        yield [T.qrule_start]
+        yield [T.prelude_start]
         stack.push (QRULE_PRELUDE)
       }
 
@@ -148,16 +151,16 @@ function* parse (tokens) {
       if (t === T.semicolon) switch (state) {
         case DECL_COLON:
         case DECL_INVALID:
-          yield [P.decl_end_invalid, c]
+          yield [T.declaration_end_invalid, c]
           stack [top] = DECLS
         break
         case DECL_VALUE:
-          yield [P.decl_end, c]
+          yield [T.declaration_end, c]
           stack [top] = DECLS
         break
         case ATRULE_PRELUDE:
-          yield [P.prelude_end]
-          yield [P.atrule_end, c]
+          yield [T.prelude_end]
+          yield [T.atrule_end, c]
           stack.pop ()
         break
         default:
@@ -167,13 +170,13 @@ function* parse (tokens) {
       else if (c === '{') switch (state) {
         case ATRULE_PRELUDE:
           stack [top] = BODY // | DECLS // TODO make configurable
-          yield [P.prelude_end]
-          yield [P.body_start]
+          yield [T.prelude_end]
+          yield [T.body_start]
         break
         case QRULE_PRELUDE:
           stack [top] = DECLS
-          yield [P.prelude_end]
-          yield [P.body_start]
+          yield [T.prelude_end]
+          yield [T.body_start]
         break
         default:
           stack.push (BRACES)
@@ -196,7 +199,7 @@ function* parse (tokens) {
           stack.pop ()
         break
         default:
-          yield [P.group_noend, c]
+          yield [T.group_noend, c]
       }
 
       else if (c === ')') switch (state) {
@@ -205,13 +208,13 @@ function* parse (tokens) {
           stack.pop ()
         break
         default:
-          yield [P.group_noend, c]
+          yield [T.group_noend, c]
       }
 
       else if (t === T.colon && state === DECL_COLON) {
         stack [top] = DECL_VALUE
         yield token
-        yield [P.value_start]
+        yield [T.value_start]
       }
 
       // FUNC && c === ')'
