@@ -76,6 +76,7 @@ function* parse (tokens) {
         stack.pop ()
       break
       case DECL_VALUE:
+        yield [T.value_end]
         yield [T.declaration_end]
         yield [T.body_end, c]
         yield [contexts.pop ()]
@@ -155,6 +156,7 @@ function* parse (tokens) {
           stack [top] = DECLS
         break
         case DECL_VALUE:
+          yield [T.value_end, c]
           yield [T.declaration_end, c]
           stack [top] = DECLS
         break
