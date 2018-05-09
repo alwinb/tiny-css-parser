@@ -10,7 +10,8 @@ Both the tokenizer as well as the parser produce a stream of tokens.
 The parser inserts properly balanced start and end tokens into the stream,
 effectively producing a traversal of the full parse tree. 
 
-Usage:
+Example
+-------
 
 	var css = require ('tiny-css-parser')
 	var stream = css.parse ('#menu { padding:0; margin:0; display:block }')
@@ -27,4 +28,12 @@ as follows:
 	
 	for (var token of stream)
 	  console.log (token, stream.state)
+
+
+API
+---
+
+- `tokenize`
+- `parse`
+- `tokens`
 
