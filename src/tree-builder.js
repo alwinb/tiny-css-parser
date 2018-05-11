@@ -10,17 +10,11 @@ module.exports = { TreeBuilder }
 // Yes I want to do that once this works. 
 
 // TODO
-// - [ ] parser error on bodyless qrule
-// - [ ] handle invalid declarations
-
-// FIXME
-// - [ ] let '{ ... }' be parsed as a Qrule with empty prelude?
-// - [ ] incorrect parse of 'foo { bla bar }'
-// - [ ] incorrect body on '@media print { foo }' 
-
+// - invalid declarations
 
 const VALUE = 1
 const TYPE = 0
+const T = tokens
 
 function AtRule (name) {
   this.name = name
@@ -36,6 +30,7 @@ function QRule () {
 function Declaration (name) {
   this.name = name
   this.value = []
+  this.valid = true
 }
 
 function Group (type) {
@@ -48,8 +43,18 @@ function Comment (value) {
 }
 
 function Ident (type) {
-  this.type = type
   this.value = ''
+}
+
+function Hash (id_flag) {
+  this.value = ''
+  this.isId = id_flag
+}
+
+function _ident (type) {
+  return type === T.hash_start ? new Hash (false)
+    : type === T.hashid_start ? new Hash (true)
+    : new Ident ()
 }
 
 
@@ -59,23 +64,21 @@ function Ident (type) {
 function TreeBuilder () {
   this.tree = []
   this.stack = [this.tree]
-  this._type = null
   this._chars = ''
 }
 
-const T = tokens
 
-TreeBuilder.prototype.step = function (token) {
+TreeBuilder.prototype.write = function (token) {
   const stack = this.stack
   let top = stack [stack.length-1]
-  // log (token, top)
+  //log (token, top)
 
   switch (token [TYPE]) {
 
     // start tags
 
     case T.atrule_start: {
-      const a = new AtRule ('')
+      const a = new AtRule (null)
       top.push (a)
       stack.push (a) }
     break
@@ -86,6 +89,32 @@ TreeBuilder.prototype.step = function (token) {
       stack.push (q) }
     break
 
+    case T.declaration_start: {
+      const d = new Declaration (null)
+      top.push (d)
+      stack.push (d) }
+    break
+
+    case T.group_start: {
+      const g = new Group (token [VALUE])
+      top.push (g)
+      stack.push (g.body) }
+    break
+
+    case T.ident_start:
+    case T.hash_start:
+    case T.hashid_start: {
+      const i = _ident (token [TYPE])
+      top.push (i)
+      stack.push (i) }
+    break
+
+    case T.comment_start: {
+      const c = new Comment ('')
+      top.push (c)
+      stack.push (c) }
+    break
+
     case T.prelude_start:
       stack.push (top.prelude)
     break
@@ -94,40 +123,15 @@ TreeBuilder.prototype.step = function (token) {
       stack.push (top.body)
     break
 
-    case T.declaration_start: {
-      const d = new Declaration ('')
-      top.push (d)
-      stack.push (d) }
-    break
-
     case T.value_start:
       stack.push (top.value)
     break
-
-    case T.group_start:
-      stack.push (new Group (token [VALUE]))
-    break
-
+    
     case T.name_start:
     case T.string_start:
-      this._type = token [TYPE]
+      // this._chars = '' // done in _end
     break
 
-    case T.hash_start:
-    case T.hashid_start:
-    case T.ident_start: {
-      const i = new Ident (token [TYPE])
-      top.push (i)
-      stack.push (i)
-    }
-    break
-
-    case T.comment_start: {
-      const c = new Comment ('')
-      top.push (c)
-      stack.push (c) }
-    break
-    
     // end tags
 
     case T.atrule_end:
@@ -137,7 +141,12 @@ TreeBuilder.prototype.step = function (token) {
     case T.value_end:
     case T.declaration_end:
     case T.group_end:
+    case T.comment_end:
       stack.pop ()
+    break
+
+    case T.declaration_invalid:
+      top.valid = false
     break
 
     case T.ident_end:
@@ -160,17 +169,12 @@ TreeBuilder.prototype.step = function (token) {
     case T.string_end_bad:
       top.push (this._chars)
       this._chars = ''
-      // TODO mark as invalid?
-    break
-
-    case T.declaration_end_invalid:
-      // TODO decide: mark current decl as invalid, or drop it?
-      stack.pop ()
+      // TODO mark as invalid? How?
     break
 
     // content tags
 
-    case T.comment_chars:
+    case T.comment_data:
       top.value += token [VALUE]
     break
     
@@ -196,19 +200,13 @@ TreeBuilder.prototype.step = function (token) {
       // ignore
     break
     
-    // CDC:
-    // CDO:
-    // delim:
-    // delim_invalid:
-    // comma:
-    // semicolon:
-    // colon:
-    // column:
-    // op:
-    // group_badend:
+    // TODO CDO, CDC
+
     default:
+      // CDC, CDO, delim, delim_invalid, comma, semicolon, colon, column, op, group_badend
       if (Array.isArray (top)) // TODO careful
         top.push (token)
     break
   }
 }
+
