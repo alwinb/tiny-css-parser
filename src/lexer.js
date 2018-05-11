@@ -52,6 +52,7 @@ const tokens =
   , hex_end: 'escape-hex-end' // ++t
   , group_start: 'group-start' // ++t
   , group_end: 'group-end' // ++t
+  , group_badend: 'group-badend' // ++t
   , number: 'number' // ++t
   , comma: 'comma' // ++t
   , semicolon: 'semicolon' // ++t
@@ -61,7 +62,7 @@ const tokens =
   , space: 'space' // ++t
   , newline: 'newline' // ++t
   , comment_start: 'comment-start' // ++t
-  , comment_chars: 'comment-chars' // ++t
+  , comment_data: 'comment-data' // ++t
   , comment_end: 'comment-end' // ++t
   , at_start: 'ident-start-at' // ++t
   , hash_start: 'ident-start-hash' // ++t
@@ -92,8 +93,8 @@ const grammar =
   { if: R_space,        emit: T.space,                          },
   { if: R_newline,      emit: nl (T.newline),                   },
   { if: R_number,       emit: T.number,                         },
-  { if: R_lgroup,       emit: T.group_start,                    },
-  { if: R_rgroup,       emit: T.group_end,                      },
+  { if: R_lgroup,       emit: group_start,                      },
+  { if: R_rgroup,       emit: group_end,                        },
   { if: ',',            emit: T.comma                           },
   { if: ';',            emit: T.semicolon,                      },
   { if: ':',            emit: T.colon,                          },
@@ -106,7 +107,7 @@ const grammar =
 
 , comment: [
   { if: '[*]/',         emit: T.comment_end,    goto: 'main'    },
-  { if: '.[^*]*',       emit: T.comment_chars                   }]
+  { if: '.[^*]*',       emit: T.comment_data                   }]
 
 , string: [
   { if: '["\']',        emit: quote_emit,       goto: unquote   },
@@ -140,6 +141,7 @@ function CustomState () {
   this.position = 0
   this.lineStart = 0
   this.line = 0
+  this.stack = []
   this.quot
   this.context
 }
@@ -173,6 +175,25 @@ function unquote (chunk) {
   this.quot = null
   return 'main'
 }
+
+const mirror = 
+  { '(':')', '{':'}', '[':']'
+  , ')':'(', ']':'[', '}':'{' }
+
+function group_start (chunk) {
+  this.stack.push (chunk)
+  return T.group_start
+}
+
+function group_end (chunk) {
+  const s = this.stack
+  if (mirror [chunk] === s [s.length-1]) {
+    s.pop ()
+    return T.group_end
+  }
+  return T.group_badend
+}
+
 
 
 // ### The actual lexer
