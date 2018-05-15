@@ -2,7 +2,6 @@ Tiny Css Parser
 ===============
 
 A very small css parser. 
-Work in progress. 
 
 Consists of a lazy tokenizer and a lazy parser. 
 Both the tokenizer as well as the parser produce a stream of tokens.
