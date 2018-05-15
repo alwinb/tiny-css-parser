@@ -18,6 +18,12 @@ const parserTokens = {
   declaration_invalid: 'decl-invalid',
   value_start: 'value-start',
   value_end: 'value-end',
+  dimension_start: 'dimension-start', 
+  dimension_end: 'dimension-end', 
+  unit_start: 'unit-start', 
+  unit_end: 'unit-end', 
+  percentage_start: 'percentage-start', 
+  percentage_end: 'percentage-end', 
 }
 
 for (let a in tokens)
@@ -25,30 +31,43 @@ for (let a in tokens)
 
 let i = 0
 const MAIN = 'MAIN' // ++i
-  , BODY = 'BODY' // ++i
+  , RULES = 'RULES' // ++i
   , DECLS = 'DECLS' // ++i
   , DECL_NAME = 'DECL_NAME' // ++i
   , DECL_COLON = 'DECL_COLON' // ++i
   , DECL_VALUE = 'DECL_VALUE' // ++i
-  , GROUP = 'GROUP'
+  , GROUP = 'GROUP' // ++i
   , ATRULE_NAME = 'ATRULE_NAME' // ++i
   , ATRULE_PRELUDE = 'ATRULE_PRELUDE' // ++i
   , QRULE_PRELUDE = 'QRULE_PRELUDE' // ++i
-
+  , DIMENSION_UNIT = 'DIMENSION_UNIT' // i++
 
 function* parse (tokens) {
   const stack = [MAIN]
   const contexts = []
   let T = parserTokens
-  let spare
+  let number = null
 
   for (let token of tokens) {
     let t = token [0], c = token [1]
     let top = stack.length - 1
     let state = stack [top]
-    //log ('\t\t', stack, token)
+    // log ('\t\t', stack, token)
+
+    if (number && t !== T.ident_start && t !== T.percent_sign) {
+      yield number
+      number = null
+    }
+
+    if (t === T.number) {
+      number = token
+      continue
+    }
 
     if (t === T.space || t === T.newline)
+      yield token
+
+    else if (state === MAIN && (t === T.CDO || t === T.CDC))
       yield token
 
     else if (t === T.comment_start || t === T.comment_end || t === T.comment_data)
@@ -56,18 +75,18 @@ function* parse (tokens) {
 
     else if (t === T.group_start && c === '{') switch (state) {
       case MAIN:
-      case BODY:
+      case RULES:
         yield [T.qrule_start]
         yield [T.prelude_start]
         yield [T.prelude_end]
         yield [T.body_start, c]
-        stack [top] = DECLS
+        stack.push (DECLS)
         contexts.push (T.qrule_end)
       break
       case ATRULE_PRELUDE:
         yield [T.prelude_end]
         yield [T.body_start, c]
-        stack [top] = BODY // | DECLS
+        stack [top] = RULES // | DECLS
       break
       case QRULE_PRELUDE:
         yield [T.prelude_end]
@@ -97,7 +116,7 @@ function* parse (tokens) {
         top = stack.length - 1
         state = stack [top]
       // NB. Fallthrough (no break)
-      case BODY:
+      case RULES:
       case DECLS:
         yield [T.body_end, c]
         yield [contexts.pop ()]
@@ -149,7 +168,7 @@ function* parse (tokens) {
 
     else if (t === T.semicolon) switch (state) {
       case MAIN:
-      case BODY:
+      case RULES:
         yield [T.qrule_start]
         yield [T.prelude_start]
         yield token
@@ -180,11 +199,27 @@ function* parse (tokens) {
         yield token
     }
 
-    else if (t === T.at_start && (state === MAIN || state === BODY || state === DECLS)) {
+    else if (t === T.at_start && (state === MAIN || state === RULES || state === DECLS)) {
       yield [T.atrule_start]
       contexts.push (T.atrule_end)
       yield [T.name_start, c]
       stack.push (ATRULE_NAME)
+    }
+
+    else if (number && t === T.ident_start) {
+      yield [T.dimension_start]
+      yield number
+      number = null
+      yield [T.unit_start, c]
+      stack.push (DIMENSION_UNIT)
+    }
+
+    else if (number && t === T.percent_sign) {
+      yield [T.percentage_start]
+      yield number
+      number = null
+      yield token
+      yield [T.percentage_end]
     }
 
     else if (t === T.ident_start && state === DECLS) {
@@ -212,12 +247,12 @@ function* parse (tokens) {
       yield [T.name_end, c]
     }
 
-    //else if (t === T.number) {
-    //  spare = token
-    //  yield token
-    //  // TODO Wait for the next token(s) to merge into percentage/ dimension
-    //}
-
+    else if (t === T.ident_end && state === DIMENSION_UNIT) {
+      yield [T.unit_end, c]
+      yield [T.dimension_end]
+      stack.pop ()
+    }
+    
     else if (t === T.colon && state === DECL_COLON) {
       yield token
       yield [T.value_start]
@@ -231,17 +266,17 @@ function* parse (tokens) {
       yield token
     }
 
-    else {
-      // Conditional action
-      if (state === MAIN || state === BODY) {
-        contexts.push (T.qrule_end)
-        yield [T.qrule_start]
-        yield [T.prelude_start]
-        stack.push (QRULE_PRELUDE)
-      }
-
+    else if (state === MAIN || state === RULES) {
+      contexts.push (T.qrule_end)
+      yield [T.qrule_start]
+      yield [T.prelude_start]
+      stack.push (QRULE_PRELUDE)
       yield token
     }
+
+    else 
+      yield token
+
   }
 }
 

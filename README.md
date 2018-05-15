@@ -13,6 +13,15 @@ effectively producing a traversal of the full parse tree.
 Example
 -------
 
+To parse a stylesheet into a syntax tree:
+
+	var css = require ('tiny-css-parser')
+	var tree = css.parseTree ('#menu { padding:0; margin:0; display:block }')
+	console.log (tree)
+
+
+To lazily parse and traverse a stylesheet:
+
 	var css = require ('tiny-css-parser')
 	var stream = css.parse ('#menu { padding:0; margin:0; display:block }')
 
@@ -30,10 +39,12 @@ as follows:
 	  console.log (token, stream.state)
 
 
+
 API
 ---
 
 - `tokenize`
 - `parse`
+- `parseTree`
 - `tokens`
 

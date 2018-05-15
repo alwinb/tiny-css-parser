@@ -16,7 +16,7 @@ module.exports = Lexer
 // The Lexer runtime
 // -----------------
 
-let _iterator = Symbol !== undefined ? Symbol.iterator : '@@iterator'
+let _iterator = Symbol !== undefined ? Symbol.iterator : '@iterator'
 
 function Lexer (grammar, start, CustomState) {
   const states = compile (grammar)

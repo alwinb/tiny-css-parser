@@ -39,7 +39,7 @@ background (black) #141414 */
 .CDC, 
 .CDO, 
 .comment-start, 
-.comment-chars, 
+.comment-data, 
 .comment-end
  {
 	color:#746D74;

@@ -58,6 +58,7 @@ const tokens =
   , semicolon: 'semicolon' // ++t
   , colon: 'colon' // ++t
   , column: 'column' // ++t
+  , percent_sign : 'percent-sign' // ++t
   , op: 'operator' // ++t
   , space: 'space' // ++t
   , newline: 'newline' // ++t
@@ -98,6 +99,7 @@ const grammar =
   { if: ',',            emit: T.comma                           },
   { if: ';',            emit: T.semicolon,                      },
   { if: ':',            emit: T.colon,                          },
+  { if: '%',            emit: T.percent_sign,                   },
   { if: R_op,           emit: T.op,                             }, // In the spec these are separate tokens
   { if: '[|][|]',       emit: T.column,                         },
   { if: '<!--',         emit: T.CDO,                            },
@@ -107,7 +109,7 @@ const grammar =
 
 , comment: [
   { if: '[*]/',         emit: T.comment_end,    goto: 'main'    },
-  { if: '.[^*]*',       emit: T.comment_data                   }]
+  { if: '.[^*]*',       emit: T.comment_data                    }]
 
 , string: [
   { if: '["\']',        emit: quote_emit,       goto: unquote   },
