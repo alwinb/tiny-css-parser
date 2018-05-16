@@ -198,7 +198,7 @@ TreeBuilder.prototype.write = function (token) {
       this._chars = ''
     break
 
-    case T.string_end_bad:
+    case T.string_bad_end:
       // TODO: this should invalidate the parent construct
       top.push (this._chars)
       this._chars = ''

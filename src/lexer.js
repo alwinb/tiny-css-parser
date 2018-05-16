@@ -49,7 +49,7 @@ const tokens =
   , delim_invalid: 'delim-invalid' // ++t
   , escape_char: 'escape-char' // ++t
   , escape_hex: 'escape-hex' // ++t
-  , hex_end: 'escape-hex-end' // ++t
+  , hex_end: 'escape-hex-space' // ++t
   , group_start: 'group-start' // ++t
   , group_end: 'group-end' // ++t
   , group_badend: 'group-badend' // ++t
@@ -65,9 +65,9 @@ const tokens =
   , comment_start: 'comment-start' // ++t
   , comment_data: 'comment-data' // ++t
   , comment_end: 'comment-end' // ++t
-  , at_start: 'ident-start-at' // ++t
-  , hash_start: 'ident-start-hash' // ++t
-  , hashid_start: 'ident-start-hashid' // ++t
+  , at_start: 'ident-at-start' // ++t
+  , hash_start: 'ident-hash-start' // ++t
+  , hashid_start: 'ident-hashid-start' // ++t
   , ident_start: 'ident-start' // ++t
   , ident_chars: 'ident-chars' // ++t
   , ident_end: 'ident-end' // ++t
@@ -76,7 +76,7 @@ const tokens =
   , ignore_newline: 'ignore-newline' // ++t
   , escape_eof: 'escape-eof' // ++t
   , string_end: 'string-end' // ++t
-  , string_end_bad: 'string-end-bad' // ++t
+  , string_bad_end: 'string-bad-end' // ++t
   }
 
 
@@ -119,7 +119,7 @@ const grammar =
   { if: R_hex_esc,      emit: T.escape_hex,     goto: hex_end   },
   { if: '\\\\$',        emit: T.escape_eof                      },
   { if: '\\\\.',        emit: T.escape_char                     },
-  {                     emit: T.string_end_bad, goto: 'main'    }]
+  {                     emit: T.string_bad_end, goto: 'main'    }]
 
 , ident: [
   { if: R_ident,        emit: T.ident_chars                     },
