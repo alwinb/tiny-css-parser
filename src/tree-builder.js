@@ -228,7 +228,7 @@ TreeBuilder.prototype.write = function (token) {
     break
     
     case T.escape_hex:
-      this._chars += parseInt (String.fromCharCode (token [VALUE] .substr (1)), 16)
+      this._chars += String.fromCharCode (parseInt (token [VALUE] .substr (1), 16))
       // TODO: what about the encoding?
     break
     

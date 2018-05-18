@@ -26,6 +26,7 @@ const parserTokens = {
   percentage_end: 'percentage-end', 
 }
 
+
 for (let a in tokens)
   parserTokens [a] = tokens [a]
 
@@ -42,10 +43,25 @@ const MAIN = 'MAIN' // ++i
   , QRULE_PRELUDE = 'QRULE_PRELUDE' // ++i
   , DIMENSION_UNIT = 'DIMENSION_UNIT' // i++
 
+
+const atruleMap = {
+  media: RULES,
+  supports: RULES,
+  document: RULES,
+  keyframes: RULES,
+  page: DECLS,
+  viewport: DECLS,
+  'font-face': DECLS,
+  'counter-style': DECLS,
+}
+
+const T = parserTokens
+
 function* parse (tokens) {
   const stack = [MAIN]
   const contexts = []
-  let T = parserTokens
+  let ident = null
+  let atrule = null
   let number = null
 
   for (let token of tokens) {
@@ -54,6 +70,14 @@ function* parse (tokens) {
     let state = stack [top]
     // log ('\t\t', stack, token)
 
+    // Collect the constituents of identifiers and at keywords
+    if (t === T.ident_start || t === T.at_start)
+      ident = []
+
+    if (ident)
+      ident.push (token)
+
+    // number tokens are delayed in order to wrap <number><ident> and <number><percent>
     if (number && t !== T.ident_start && t !== T.percent_sign) {
       yield number
       number = null
@@ -86,7 +110,7 @@ function* parse (tokens) {
       case ATRULE_PRELUDE:
         yield [T.prelude_end]
         yield [T.body_start, c]
-        stack [top] = RULES // | DECLS
+        stack [top] = atrule in atruleMap ? atruleMap [atrule] : DECLS
       break
       case QRULE_PRELUDE:
         yield [T.prelude_end]
@@ -238,21 +262,30 @@ function* parse (tokens) {
     
     else if (t === T.ident_end && state === ATRULE_NAME) {
       stack [top] = ATRULE_PRELUDE
+      atrule = eval_ident (ident)
+      ident = null
       yield [T.name_end, c]
       yield [T.prelude_start]
     }
 
     else if (t === T.ident_end && state === DECL_NAME) {
       stack [top] = DECL_COLON
+      ident = null
       yield [T.name_end, c]
     }
 
     else if (t === T.ident_end && state === DIMENSION_UNIT) {
       yield [T.unit_end, c]
       yield [T.dimension_end]
+      ident = null
       stack.pop ()
     }
     
+    else if (t === T.ident_end) {
+      ident = null
+      yield token
+    }
+
     else if (t === T.colon && state === DECL_COLON) {
       yield token
       yield [T.value_start]
@@ -279,6 +312,29 @@ function* parse (tokens) {
 
   }
 }
+
+
+function eval_ident (tokens) {
+  return tokens.map (eval_token) .join('')
+}
+
+function eval_token (token) {
+  switch (token [0]) {
+    case T.ident_chars:
+      return token [1]
+    break
+
+    case T.escape_char:
+      return token [1] .substr (1)
+    break
+
+    case T.escape_hex:
+      return String.fromCharCode (parseInt (token [VALUE] .substr (1), 16))
+      // TODO check correctness (surrogates and null e.a.)
+    break
+  }
+}
+
 
 
 module.exports = { parse:parse, tokens:parserTokens }
