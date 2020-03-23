@@ -1,4 +1,5 @@
 "use strict"
+const T = require ('./tokens')
 const TinyLexer = require ('./tiny-lexer')
 
 // A tiny-lexer based tokenizer for CSS
@@ -39,50 +40,8 @@ const R_ident_start = '.{0}' + R_starts_ident
 const R_ident = '[A-Za-z0-9\\-_\\u0080-\\uFFFF]+'
 
 
-// ### Token types
-
-//let t = 0
-const tokens =
-  { CDC: 'CDC' // ++t
-  , CDO: 'CDO' // ++t
-  , delim: 'delim' // ++t
-  , delim_invalid: 'delim-invalid' // ++t
-  , escape_char: 'escape-char' // ++t
-  , escape_hex: 'escape-hex' // ++t
-  , hex_end: 'escape-hex-space' // ++t
-  , group_start: 'group-start' // ++t
-  , group_end: 'group-end' // ++t
-  , group_badend: 'group-badend' // ++t
-  , number: 'number' // ++t
-  , comma: 'comma' // ++t
-  , semicolon: 'semicolon' // ++t
-  , colon: 'colon' // ++t
-  , column: 'column' // ++t
-  , percent_sign : 'percent-sign' // ++t
-  , op: 'operator' // ++t
-  , space: 'space' // ++t
-  , newline: 'newline' // ++t
-  , comment_start: 'comment-start' // ++t
-  , comment_data: 'comment-data' // ++t
-  , comment_end: 'comment-end' // ++t
-  , at_start: 'ident-at-start' // ++t
-  , hash_start: 'ident-hash-start' // ++t
-  , hashid_start: 'ident-hashid-start' // ++t
-  , ident_start: 'ident-start' // ++t
-  , ident_chars: 'ident-chars' // ++t
-  , ident_end: 'ident-end' // ++t
-  , string_start: 'string-start' // ++t
-  , string_chars: 'string-chars' // ++t
-  , ignore_newline: 'ignore-newline' // ++t
-  , escape_eof: 'escape-eof' // ++t
-  , string_end: 'string-end' // ++t
-  , string_bad_end: 'string-bad-end' // ++t
-  }
-
-
 // ### The actual grammar
 
-const T = tokens
 const grammar = 
 { main: [
   { if: '/[*]',         emit: T.comment_start,  goto: 'comment' },
@@ -189,7 +148,7 @@ function group_start (chunk) {
 
 function group_end (chunk) {
   const s = this.stack
-  if (mirror [chunk] === s [s.length-1]) {
+  if (mirror [chunk] === s [s.length - 1]) {
     s.pop ()
     return T.group_end
   }
@@ -197,9 +156,8 @@ function group_end (chunk) {
 }
 
 
-
 // ### The actual lexer
 // Wrapping it all up together
 
 const lexer = new TinyLexer (grammar, 'main', CustomState)
-module.exports = { grammar:grammar, tokens:tokens, tokenise:lexer.tokenize, tokenize:lexer.tokenize }
+module.exports = { grammar:grammar, tokens:T, tokenise:lexer.tokenize, tokenize:lexer.tokenize }

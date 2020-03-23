@@ -1,34 +1,9 @@
 "use strict"
-const { tokens } = require ('./lexer')
+const T = require ('./tokens')
 const log = console.log.bind (console)
 
-const parserTokens = {
-  atrule_start: 'atrule-start',
-  atrule_end: 'atrule-end',
-  name_start: 'name-start',
-  name_end: 'name-end',
-  qrule_start: 'qrule-start',
-  qrule_end: 'qrule-end',
-  prelude_start: 'prelude-start',
-  prelude_end: 'prelude-end',
-  body_start: 'body-start',
-  body_end: 'body-end',
-  declaration_start: 'decl-start',
-  declaration_end: 'decl-end',
-  declaration_invalid: 'decl-invalid',
-  value_start: 'value-start',
-  value_end: 'value-end',
-  dimension_start: 'dimension-start', 
-  dimension_end: 'dimension-end', 
-  unit_start: 'unit-start', 
-  unit_end: 'unit-end', 
-  percentage_start: 'percentage-start', 
-  percentage_end: 'percentage-end', 
-}
-
-
-for (let a in tokens)
-  parserTokens [a] = tokens [a]
+// Parser
+// ======
 
 let i = 0
 const MAIN = 'MAIN' // ++i
@@ -43,7 +18,6 @@ const MAIN = 'MAIN' // ++i
   , QRULE_PRELUDE = 'QRULE_PRELUDE' // ++i
   , DIMENSION_UNIT = 'DIMENSION_UNIT' // i++
 
-
 const atruleMap = {
   media: RULES,
   supports: RULES,
@@ -55,10 +29,9 @@ const atruleMap = {
   'counter-style': DECLS,
 }
 
-const T = parserTokens
 
-function* parse (tokens) {
-  const stack = [MAIN]
+function* parse (tokens, _state = MAIN) {
+  const stack = [_state]
   const contexts = []
   let ident = null
   let atrule = null
@@ -165,10 +138,6 @@ function* parse (tokens) {
         yield token
         stack.pop ()
       break
-      default:
-        // should never happen
-        stack.pop ()
-        yield token
     }
 
     else if (t === T.group_start) {
@@ -337,4 +306,4 @@ function eval_token (token) {
 
 
 
-module.exports = { parse:parse, tokens:parserTokens }
+module.exports = { parse:parse, tokens:T }

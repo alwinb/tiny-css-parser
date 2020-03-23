@@ -1,25 +1,10 @@
-"use strict"
-
-const { tokenize, parse } = require ('../src')
-  , { head, renderTokens, flush } = require ('./template')
-  , fs = require ('fs')
-
+const { parse, parseTree, tokenize, tokens } = require ('../src')
 const log = console.log.bind (console)
 
-function compose (fn1, fn2, fn3, __) { 
-  var fns = arguments
-  return function (x) {
-    for (let i = fns.length - 1; i >= 0; i--) x = fns [i] (x)
-    return x } }
+// Quick test
 
-
-function map (fn) { return function* (obj) {
-  for (let a of obj) yield fn (a) } }
-
-
-// Test
-
-const samples =
+const fs = require ('fs')
+var samples =
   [ '#bla { key1: two; key2: x } .boo { boo: bla }'
   , '@media print { foo {} }'
   , '@media print { foo }'
@@ -35,29 +20,36 @@ const samples =
   , 'hello  \r\n "badstring\n newline and "string with \\ff\n newline hex esc'
   , 'hello {wo]r]ld}'
   , 'hello {wo{r}ld}'
-  , fs.readFileSync ('../test/data/style.dpl')
-  , fs.readFileSync ('../test/data/style6.dpl')
   , fs.readFileSync ('../test/colors.css')
   ]
 
-function info (stream) {
-  return { line:stream.state.line, col:stream.state.position - stream.state.lineStart }
+samples = ['{ width: 10px 2 10% 3 }']
+samples = ['@media { booo } abcd @bd <!-- { width: 10px 2 10% 3 --> }']
+samples = ['@page { margin:1cm; @top-center { color:red; } }']
+
+// log(...parse('1px solid red, foo', 'DECL_VALUE'))
+// log(...parseTree('1px solid red, foo', 'DECL_VALUE'))
+
+
+samples.forEach (sample => {
+  log (sample)
+  let t = parse (sample)
+  log (Array.from (t), sample)
+  try {
+    log (JSON.stringify (parseTree (sample), fn, 2))
+  } catch (e) { log (e) }
+})
+
+
+
+
+function fn (k, o) {
+  let r = o
+  if (!Array.isArray (o) && typeof o === 'object') {
+    return Object.assign ({ type: o.constructor.name }, r)
+  }
+  return r
 }
 
-let r = Math.random ()
-compose (flush, head ('file://'+__dirname+'/colors.css?'+r), map (renderTokens), map (tokenize)) (samples)
 
 
-var sample = '@media blaa; one { foo:blaa; fee:haa } bee baa'
-var sample = 'ab\\0c c { foo:bar; baz:paz; Boo;bah }'
-var sample = 'prelude { @abc { foo:bar } asd; baz:paz; Boo;bah } }'
-var sample = 'pre { @foo { baz { bar:poo } } }'
-
-var test = tokenize (sample)
-for (let t of test)
-  log (t)
-
-var stream = parse ('#menu { padding:0; margin:; display:block }')
-log (stream.state)
-for (var token of stream)
-  console.log (token, stream.state)

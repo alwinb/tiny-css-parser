@@ -1,4 +1,4 @@
-const tokens = require ('./parser').tokens
+const tokens = require ('./tokens')
 const log = console.log.bind (console)
 module.exports = { TreeBuilder }
 

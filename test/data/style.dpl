@@ -1,0 +1,22 @@
+[_] {
+	font-family: Helvetica, Arial, Sans;
+	font-size:15px;
+  background: s-attr(fav_color, color);
+}
+
+.. [false] {
+	color:red;
+}
+
+.. some_animal {
+  s-node-name:'img';
+  s-attr-src: s-attr(some_where, string);
+  s-content:none;
+}
+
+.. some_link {
+  s-node-name:'a';
+  s-attr-href: s-attr(href, string);
+  s-content: '' title;
+}
+

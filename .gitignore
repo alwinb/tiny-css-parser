@@ -1,3 +1,5 @@
 ignore
 git-ignore
 node_modules
+WRAP UP.*
+dist/

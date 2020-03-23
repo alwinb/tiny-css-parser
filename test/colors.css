@@ -26,7 +26,7 @@ background (black) #141414 */
 .invalid,
 .string-end-badstring,
 .delim-invalid, 
-.group-noend {
+.group-badend {
   background:#60315A; /* purple */
   padding:1px 0 0;
 }
@@ -66,8 +66,8 @@ background (black) #141414 */
 
 .hashid,
 .hash,
-.ident-start-hash,
-.ident-start-hashid,
+.ident-hash-start,
+.ident-hashid-start,
 .boolean,
 .number {
 	color:#CF6A4C; /* red */
@@ -76,7 +76,7 @@ background (black) #141414 */
 .at,
 .symbol,
 .func,
-.ident-start-at
+.ident-at-start
 {
 	color:#7587A6; /* blue */
 }

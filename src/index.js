@@ -7,9 +7,9 @@ const log = console.log.bind (console)
 
 let _iterator = Symbol !== undefined ? Symbol.iterator : '@iterator'
 
-function parse (input) {
+function parse (input, _state) {
   const tokens = tokenize (input)
-  const traversal = _parse (tokens)
+  const traversal = _parse (tokens, _state)
   const self = { next:traversal.next.bind(traversal), state:tokens.state }
   self [_iterator] = function () { return self }
   return self
