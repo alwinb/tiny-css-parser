@@ -32,6 +32,3 @@ module.exports = {
   parseTree: parseTree,
   tokens: tokens
 }
-
-if (typeof window === 'object')
-  window.cssParser = module.exports
