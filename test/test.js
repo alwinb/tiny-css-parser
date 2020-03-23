@@ -20,7 +20,7 @@ var samples =
   , 'hello  \r\n "badstring\n newline and "string with \\ff\n newline hex esc'
   , 'hello {wo]r]ld}'
   , 'hello {wo{r}ld}'
-  , fs.readFileSync ('../test/colors.css')
+  , fs.readFileSync ('../test/style/tokens.css')
   ]
 
 samples = ['{ width: 10px 2 10% 3 }']

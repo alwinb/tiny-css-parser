@@ -1,0 +1,63 @@
+<link rel="stylesheet" type="text/css" href="./style/tokens.css">
+<script src="../dist/tinycss.min.js"></script>
+
+<h1>Tiny Css Parser</h1>
+
+<div>
+  <pre id=inspector style=white-space:unset>
+    Inspect the output by clicking on it, below
+  </pre>
+  <pre id=colors></pre>
+</div>
+
+<script>
+  const log = console.log.bind (console)
+  const doc = document
+
+  const pre = doc.getElementById ('colors')
+  const pre2 = doc.getElementById ('inspector')
+  const objectKey = Symbol ()
+
+  function inspect (...args) {
+    pre2.innerHTML = ''
+    for (let x of args)
+      pre2.append (JSON.stringify (x, null, 2), doc.createElement ('BR'))
+  }
+
+  function show (data) {
+    const stream = tinycss.tokenize (data)
+    let stateBefore = stream.state.symbol, stateAfter
+    for (let chunk of stream) {
+      stateAfter = stream.state.symbol
+      const el = renderChunk (chunk)
+      pre.append (el)
+      el [objectKey] = { type:chunk[0], stateBefore, stateAfter }
+      stateBefore = stateAfter
+    }
+  }
+
+  function renderChunk ([type, value]) {
+    const e = doc.createElement ('SPAN')
+      e.title = e.className = type
+      let tnode = doc.createTextNode(value)
+      e.append (value)
+      return e
+  }
+
+  function main () {
+    const req = new XMLHttpRequest ()
+      req.responseType = 'text'
+      req.onload = $=> show (req.responseText)
+      req.onerror = $=> show ('/* Error:\ XMLHttpRequest failed */')
+    // Go!
+    
+    doc.body.onclick = function (evt) {
+      if (objectKey in evt.target)
+        inspect (evt.target [objectKey])
+    }
+    
+    req.open ('GET', new URL ('style/tokens.css', document.location))
+    req.send ()
+  }
+</script>
+<script>main()</script>

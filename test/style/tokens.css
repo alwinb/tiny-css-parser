@@ -1,27 +1,27 @@
 html, body {
+  margin:0; padding:0;
+  font-size:24px;
+}
+
+body {
+	font-family:Helvetica, Arial, Sans;
+  font-size:16px;
+  line-height:1rem;
+}
+
+/** Styles for the tokens **/
+
+pre, code { 
+  font-size:13px;
 	color:white;
 	background:#202020;
-	font-family:Helvetica, Arial, Sans;
-}
-
-pre { 
 	font-family:Menlo, Monaco, Monospace;
-	font-size:12px;
-	line-height:16px;
 	tab-size:2;
-	padding:1px 4px;
-	margin:0 0 16px 0;
 }
 
-/* { outline: 1px solid #fff;} */
-
-/* Json Colors
-key: (blue) #7587A6
-number: (red) #CF6A4C
-boolean: (red) #CF6A4C
-string: (green) #8F9D6A
-gutter (darkgrey) #232323
-background (black) #141414 */
+/* Css colors
+...
+ */
 
 .invalid,
 .string-end-badstring,
@@ -98,3 +98,33 @@ background (black) #141414 */
 	color:#D4BD7F; /* light brown */
 	color:#B38243; /* orange-brown */
 }
+
+
+/** Some additional stying for the rest of the sample page **/
+
+body {
+  padding:1rem 1rem;
+}
+h1 {
+  font-size:48px;
+  line-height:2rem;
+  min-height:2rem;
+}
+pre {
+  display:block;
+  line-height:1rem;
+  padding:.7rem 1rem 1.3rem;
+  border-radius:.3rem;
+}
+
+#colors {
+  cursor:default;
+}
+#colors span {
+  padding:.15rem 0;
+  border-radius:.1rem;
+}
+#colors span:hover {
+  background:#444;
+}
+
