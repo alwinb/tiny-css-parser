@@ -14,36 +14,35 @@ Example
 
 To parse a stylesheet into a syntax tree:
 
-	var css = require ('tiny-css-parser')
-	var tree = css.parseTree ('#menu { padding:0; margin:0; display:block }')
-	console.log (tree)
-
+```javascript
+var css = require ('tiny-css-parser')
+var tree = css.parseTree ('#menu { padding:0; margin:0; display:block }')
+console.log (tree)
+```
 
 To lazily parse and traverse a stylesheet:
 
-	var css = require ('tiny-css-parser')
-	var stream = css.parse ('#menu { padding:0; margin:0; display:block }')
+```javascript
+var stream = css.parse ('#menu { padding:0; margin:0; display:block }')
 
-	for (var token of stream)
-	  console.log (token)
-
+for (var token of stream)
+  console.log (token)
+```
 
 It is possible to query the stream for state info and source position,
 as follows:
 
-	var css = require ('tiny-css-parser')
-	var stream = css.parse ('#menu { padding:0; margin:0; display:block }')
-	
-	for (var token of stream)
-	  console.log (token, stream.state)
+```javascript
+var stream = css.parse ('#menu { padding:0; margin:0; display:block }')
 
-
+for (var token of stream)
+  console.log (token, stream.state)
+```
 
 API
 ---
 
-- `tokenize`
-- `parse`
-- `parseTree`
-- `tokens`
-
+- `tokenize (string)` (generator function)
+- `parse (string)` (generator function)
+- `parseTree (string)` (function)
+- `tokens` (object/ dictionary)
