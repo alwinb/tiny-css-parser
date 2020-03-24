@@ -1,11 +1,10 @@
 const TinyLexer = require ('./tiny-lexer')
   , { tokenize } = require ('./lexer')
   , { parse:_parse, tokens } = require ('./parser')
-  , TreeBuilder = require ('./tree-builder').TreeBuilder
+  , { TreeBuilder } = require ('./tree-builder')
 
 const log = console.log.bind (console)
-
-let _iterator = Symbol !== undefined ? Symbol.iterator : '@iterator'
+const _iterator = Symbol !== undefined ? Symbol.iterator : '@iterator'
 
 function parse (input, _state) {
   const tokens = tokenize (input)
@@ -15,7 +14,6 @@ function parse (input, _state) {
   return self
 }
 
-
 function parseTree (input) {
   const traversal = parse (input)
   const builder = new TreeBuilder ()
@@ -24,11 +22,4 @@ function parseTree (input) {
   return builder.tree
 }
 
-
-module.exports = {
-  tokenize: tokenize,
-  tokenise: tokenize,
-  parse: parse,
-  parseTree: parseTree,
-  tokens: tokens
-}
+module.exports = { tokenize, tokenise: tokenize, parse, parseTree, tokens }

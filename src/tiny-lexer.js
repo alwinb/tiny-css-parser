@@ -1,84 +1,11 @@
-"use strict"
-module.exports = Lexer
+// The compiler and runtime
+// ------------------------
 
-// Tiny lexer runtime
-// ==================
-
-// The idea is that lexical grammars can be very compactly expressed by a 
-// state machine that has transitions that are labeled with regular expressions
-// rather than individual characters. 
-
-// Since the javascript RegExp object allows reading and writing the position
-// of reference in the input string, it is possible to represent each state by
-// a single RegExp object with capture groups; each capture groups then 
-// identifies a transition. 
-
-// The Lexer runtime
-// -----------------
-
-let _iterator = Symbol !== undefined ? Symbol.iterator : '@iterator'
-
-function Lexer (grammar, start, CustomState) {
-  const states = compile (grammar)
-  this.tokenize = tokenize
-  this.tokenise = tokenize
-
-  function tokenize (input) {
-    return new TokenIterator (input)
-  }
-
-  function TokenIterator (input) {
-    const custom = new CustomState ()
-    let symbol = start
-      , position = 0
-      , state = states [symbol]
-      , self = this
-
-    this.value
-    this.done = false
-    this.next = next
-    this.state = custom
-    this [_iterator] = function () { return self }
-
-    function next () {
-      const regex = state.regex
-      regex.lastIndex = position
-      const match = regex.exec (input)
-
-      if (position === input.length && regex.lastIndex === 0) {
-        self.value = null
-        self.done = true
-        return self
-      }
-
-      if (match == null)
-        throw new SyntaxError ('Lexer: invalid input before: ' + input.substr (position, 12))
-
-      position = custom.position = regex.lastIndex
-
-      let i = 1; while (match [i] == null) i++
-      const edge = state.edges [i-1]
-
-      self.value = typeof edge.emit === 'function'
-        ? [edge.emit.call (custom, match [i]), match [i]]
-        : [edge.emit, match [i]]
-
-      symbol = custom.symbol = typeof edge.goto === 'function'
-        ? edge.goto.call (custom, match [i])
-        : edge.goto
-
-      state = states [symbol]
-      if (state == null) 
-        throw new Error ('Lexer: no such symbol: '+symbol)
-  
-      return self
-    }
-  }
+function State (table, name) {
+  this.name = name
+  this.regex = new RegExp ('(' + table.map (fst) .join (')|(') + ')', 'sgy')
+  this.edges = table.map (compileRow (name))
 }
-
-
-// The compiler
-// ------------
 
 function compile (grammar) {
   const compiled = {}
@@ -87,21 +14,66 @@ function compile (grammar) {
   return compiled
 }
 
-function State (table, name) {
-  this.name = name
-  this.regex = new RegExp ('(' + table.map (fst) .join (')|(') + ')', 'gy')
-  this.edges = table.map (fn)
+function fst (row) {
+  return Array.isArray (row) ? row [0] || '.{0}'
+    : 'if' in row ? row.if : '.{0}'
+}
 
-  function fn (row) {
-    return {
-      goto: 'goto' in row ? row.goto : name, 
-      emit: 'emit' in row ? row.emit : null
-    }
+function compileRow (symbol) {
+  return function (row) {
+    let r, emit, goto
+    if (Array.isArray) [r = '.{0}', emit, goto = symbol] = row
+    else ({ if:r = '.{0}', emit, goto = symbol } = row )
+    const g = typeof goto === 'function' ? goto : (data) => goto
+    const e = typeof emit === 'function' ? wrapEmit (emit) : (data) => [emit, data]
+    return { emit:e, goto:g }
   }
 }
 
-function fst (row) {
-  return ('if' in row) ? row ['if'] : '.{0}'
+function wrapEmit (fn) { return function (data) {
+  return [fn.call (this, data), data]
+}}
+
+
+// The Lexer runtime
+// -----------------
+
+function TinyLexer (grammar, start, CustomState = Object) {
+  const states = compile (grammar)
+
+  this.tokenize = function (input, position = 0, symbol = start) {
+    const custom = new CustomState (input, position, symbol)
+    const stream = tokenize (input, custom, position, symbol)
+    stream.state = custom
+    return stream
+  }
+
+  function *tokenize (input, custom, position, symbol) {
+    do if (!(symbol in states))
+      throw new Error (`Lexer: no such symbol: ${symbol}.`)
+
+    else {
+      const state = states [symbol]
+      const regex = state.regex
+      const match = (regex.lastIndex = position, regex.exec (input))
+
+      if (!match){
+        if (position !== input.length)
+          throw new SyntaxError (`Lexer: invalid input at index ${position} in state ${symbol} before ${input.substr (position, 12)}`)
+        return
+      }
+
+      let i = 1; while (match [i] == null) i++
+      const edge = state.edges [i-1]
+      const token = edge.emit.call (custom, match[i])
+      symbol = edge.goto.call (custom, match[i])
+      position = regex.lastIndex
+      Object.assign (custom, { symbol, position })
+      yield token
+    }
+
+    while (position <= input.length)
+  }
 }
 
-
+module.exports = TinyLexer

@@ -1,6 +1,6 @@
-"use strict"
 const T = require ('./tokens')
 const TinyLexer = require ('./tiny-lexer')
+const raw = String.raw
 
 // A tiny-lexer based tokenizer for CSS
 // ====================================
@@ -9,87 +9,91 @@ const TinyLexer = require ('./tiny-lexer')
 // These are used in the tiny-lexer grammar below.
 // Each regular expression corresponds to a transition between states. 
 
-const R_space = '[\t ]+'
-const R_space1 = '[\t ]'
-const R_newline = '(?:\r?\n|[\r\f])'
-const R_lgroup = '[({[]'
-const R_rgroup = '[)}\\]]'
-const R_op = '[|~^*$]='
+const R_space   = raw `[\t ]+`
+const R_space1  = raw `[\t ]`
+const R_newline = raw `(?:\r?\n|[\r\f])`
+const R_lgroup  = raw `[({[]`
+const R_rgroup  = raw `[)}\]]`
+const R_op      = raw `[|~^*$]=` // In the spec these are separate tokens
 
 // Escapes
-const R_hex_esc = '\\\\[0-9A-Fa-f]{1,6}'
+const R_hex_esc = raw `\\[0-9A-Fa-f]{1,6}`
 
 // Strings
-const R_string = "[^\n\r\f\\\\'\"]+"
-const R_nl_esc = '\\\\' + R_newline
+const R_string  = raw `[^\n\r\f\\'"]+`
+const R_nl_esc  = raw `\\` + R_newline
+
+// Comments
+const R_comment  = raw `.[^\n\r\f*]*`
 
 // Numbers
-const R_fract = '(?:\\.[0-9]+)'
+const R_fract   = '(?:\\.[0-9]+)'
 const R_opt_exp = '(?:[eE][+\\-]?[0-9]+)?'
-const R_number = '[+-]?(?:' + R_fract + '|[0-9]+' + R_fract + '?)' + R_opt_exp
+const R_number  = '[+-]?(?:' + R_fract + '|[0-9]+' + R_fract + '?)' + R_opt_exp
 
 // Identifiers
 // Using a lookahead of max 3 chars
-const R_starts_ident = '(?=[-]?(?:[A-Za-z_\\u0080-\\uFFFF]|\\\\[^\n\r\f]))'
-const R_hash_lookahead = '(?=(?:[A-Za-z0-9\\-_\\u0080-\\uFFFF]|\\\\[^\n\r\f]))'
+const R_starts_ident   = raw `(?=[-]?(?:[A-Za-z_\u0080-\uFFFF]|\\[^\n\r\f]))`
+const R_hash_lookahead = raw `(?=(?:[A-Za-z0-9\-_\u0080-\uFFFF]|\\[^\n\r\f]))`
 
-const R_at_start = '@' + R_starts_ident
-const R_hash_start = '#' + R_hash_lookahead
-const R_hashid_start = '#' + R_starts_ident
-const R_ident_start = '.{0}' + R_starts_ident
-const R_ident = '[A-Za-z0-9\\-_\\u0080-\\uFFFF]+'
+const R_at_start     =    '@' + R_starts_ident
+const R_hash_start   =    '#' + R_hash_lookahead
+const R_hashid_start =    '#' + R_starts_ident
+const R_ident_start  = '.{0}' + R_starts_ident
+const R_ident        = raw `[A-Za-z0-9\-_\u0080-\uFFFF]+`
 
 
 // ### The actual grammar
 
 const grammar = 
 { main: [
-  { if: '/[*]',         emit: T.comment_start,  goto: 'comment' },
-  { if: '["\']',        emit: T.string_start,   goto:  quote    },
-  { if: R_ident_start,  emit: T.ident_start,    goto: 'ident'   },
-  { if: R_hashid_start, emit: T.hashid_start,   goto: 'ident'   },
-  { if: R_hash_start,   emit: T.hash_start,     goto: 'ident'   },
-  { if: R_at_start,     emit: T.at_start,       goto: 'ident'   },
-  { if: R_space,        emit: T.space,                          },
-  { if: R_newline,      emit: nl (T.newline),                   },
-  { if: R_number,       emit: T.number,                         },
-  { if: R_lgroup,       emit: group_start,                      },
-  { if: R_rgroup,       emit: group_end,                        },
-  { if: ',',            emit: T.comma                           },
-  { if: ';',            emit: T.semicolon,                      },
-  { if: ':',            emit: T.colon,                          },
-  { if: '%',            emit: T.percent_sign,                   },
-  { if: R_op,           emit: T.op,                             }, // In the spec these are separate tokens
-  { if: '[|][|]',       emit: T.column,                         },
-  { if: '<!--',         emit: T.CDO,                            },
-  { if: '-->',          emit: T.CDC,                            },
-  { if: '\\\\',         emit: T.delim_invalid,                  },
-  { if: '.',            emit: T.delim,                          }]
+  [ '/[*]',         T.comment_start,  'comment'],
+  [ '["\']',        T.string_start,    quote   ],
+  [ R_ident_start,  T.ident_start,    'ident'  ],
+  [ R_hashid_start, T.hashid_start,   'ident'  ],
+  [ R_hash_start,   T.hash_start,     'ident'  ],
+  [ R_at_start,     T.at_start,       'ident'  ],
+  [ R_space,        T.space,                   ],
+  [ R_newline,      nl (T.newline),            ],
+  [ R_number,       T.number,                  ],
+  [ R_lgroup,       group_start,               ],
+  [ R_rgroup,       group_end,                 ],
+  [ ',',            T.comma                    ],
+  [ ';',            T.semicolon,               ],
+  [ ':',            T.colon,                   ],
+  [ '%',            T.percent_sign,            ],
+  [ R_op,           T.op,                      ],
+  [ '[|][|]',       T.column,                  ],
+  [ '<!--',         T.CDO,                     ],
+  [ '-->',          T.CDC,                     ],
+  [ '\\\\',         T.delim_invalid,           ],
+  [ '.',            T.delim,                   ]]
 
 , comment: [
-  { if: '[*]/',         emit: T.comment_end,    goto: 'main'    },
-  { if: '.[^*]*',       emit: T.comment_data                    }]
+  [ '[*]/',         T.comment_end,    'main'   ],
+  [ R_newline,      nl (T.comment_data),       ],
+  [ R_comment,      T.comment_data             ]]
 
 , string: [
-  { if: '["\']',        emit: quote_emit,       goto: unquote   },
-  { if: '$',            emit: T.string_end,     goto: 'main'    },
-  { if: R_string,       emit: T.string_chars                    },
-  { if: R_nl_esc,       emit: nl (T.ignore_newline)             },
-  { if: R_hex_esc,      emit: T.escape_hex,     goto: hex_end   },
-  { if: '\\\\$',        emit: T.escape_eof                      },
-  { if: '\\\\.',        emit: T.escape_char                     },
-  {                     emit: T.string_bad_end, goto: 'main'    }]
+  [ '["\']',        quote_emit,        unquote ],
+  [ '$',            T.string_end,     'main'   ],
+  [ R_string,       T.string_chars             ],
+  [ R_nl_esc,       nl (T.ignore_newline)      ],
+  [ R_hex_esc,      T.escape_hex,      hex_end ],
+  [ '\\\\$',        T.escape_eof               ],
+  [ '\\\\.',        T.escape_char              ],
+  [ '.{0}',         T.string_bad_end, 'main'   ]]
 
 , ident: [
-  { if: R_ident,        emit: T.ident_chars                     },
-  { if: R_hex_esc,      emit: T.escape_hex,     goto: hex_end   },
-  { if: '\\\\.',        emit: T.escape_char                     },
-  {                     emit: T.ident_end,      goto: 'main'    }]
+  [ R_ident,        T.ident_chars              ],
+  [ R_hex_esc,      T.escape_hex,      hex_end ],
+  [ '\\\\.',        T.escape_char              ],
+  [ '.{0}',         T.ident_end,      'main'   ]]
 
 , hex_end: [
-  { if: R_space1,       emit: T.hex_end,        goto: context   },
-  { if: R_newline,      emit: nl (T.hex_end),   goto: context   },
-  {                     emit: T.hex_end,        goto: context   }]
+  [ R_space1,       T.hex_end,         context ],
+  [ R_newline,      nl (T.hex_end),    context ],
+  [ '.{0}',         T.hex_end,         context ]]
 
 }
 
@@ -160,4 +164,4 @@ function group_end (chunk) {
 // Wrapping it all up together
 
 const lexer = new TinyLexer (grammar, 'main', CustomState)
-module.exports = { grammar:grammar, tokens:T, tokenise:lexer.tokenize, tokenize:lexer.tokenize }
+module.exports = { grammar, tokens:T, tokenise:lexer.tokenize, tokenize:lexer.tokenize }
