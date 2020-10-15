@@ -1,6 +1,6 @@
 {
   "name": "tiny-css-parser",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "A very small css parser",
   "main": "src/index.js",
   "directories": {

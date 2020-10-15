@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-files = browser.js index.js tiny-lexer.js lexer.js tokens.js parser.js tree-builder.js
+files = browser.js generic-tree.js index.js lexer.js parser.js tiny-lexer.js tokens.js tree-builder.js
 sources = $(addprefix src/, $(files))
 
 all: dist/tinycss.min.js
@@ -14,5 +14,6 @@ dist/:
 	@ mkdir ./dist
 
 clean:
+	@ echo "Removing dist/ directory"
 	@ test -d dist/ && rm -r dist/ || exit 0
 
