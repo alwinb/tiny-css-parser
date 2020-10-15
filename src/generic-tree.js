@@ -1,117 +1,89 @@
+"use strict";
 const log = console.log.bind (console)
 
-const START = 'start'
-const END = 'end'
+// Generic Tree builder
+// =====================
 
-function start (type, value) {
-  return { tag:START, type:type, value:value }
-}
+// Generic Tree node
 
-function end (type, value) {
-  return { tag:END, type:type, value:value }
-}
-
-function Node (type) {
-  this.type = type
-  this.start = null
-  this.content = []
-  this.end = null
-}
-
-// Tree builder
-// Reduces a sequence of start/end/other tokens to a tree. 
-// Assumes that the itrable has balanced start and end tags. 
-
-function TreeBuilder (fn) {
-  this.root = new Node ('#root')
-  const stack = [this.root]
-  this.write = write
-
-  function write (token) {
-    let brace = fn (token)
-    if (brace && brace.tag === START) {
-      let node = new Node (brace.type)
-      node.start = token
-      stack [stack.length-1].content.push (node)
-      stack.push (node)
-    }
-
-    else if (brace && brace.tag === END) {
-      // TODO should we check mismatches?
-      // TODO replace the top of the stack/content with its evalled version
-      let node = stack.pop ()
-      node.end = token
-    }
-
-    else
-      stack[stack.length-1].content.push (token)
+class Node {
+  constructor (type, start = null) {
+    Object.defineProperty (this, 'type', { value:type, enumerable:false })
+    this.start = start
+    this.content = []
+    this.end = null
+  }
+  get [Symbol.toStringTag] () {
+    return this.type
   }
 }
 
-function buildTree (iterable) {
-  const builder = new TreeBuilder (_ => _)
-  for (let x of iterable)
-    builder.write (x)
-  return builder.root
+// START/ END markers
+
+const START = Symbol ('START')
+const END = Symbol ('END')
+TreeBuilder.constants = { START, END }
+
+// The TreeBuilder (closure-based class)
+// This is quite nice, it actually pairs each token with its evaluation.
+// It would be nice to expose that pairing in an output stream :)
+
+function TreeBuilder (tokenInfo, handlers = { }) {
+  const root = new Node ('#root')
+  const stack = [['#root', root]]
+
+  Object.defineProperties (this, { write: { value:write }, root: { value:root }})
+  return this
+
+  function write (token) {
+    // log ({ root })
+    // log (stack.map ( _ => _.type ), 'write', token)
+
+    const [tag, nodeType] = tokenInfo (token)
+    const handler = handlers [nodeType] || { }
+
+    if (tag === START) { // log ('open', { nodeType, token })
+      const node = handler.start ? handler.start (nodeType, token) : new Node (nodeType, token)
+      stack.unshift ([nodeType, node])
+      if (!handler.eval)
+        _push (stack[1], stack[0]) // Incremental construction possible
+    }
+
+    else if (tag === END) { // log ('close', { nodeType, token })
+      const [_,node] = stack.shift ()
+      if (node instanceof Node) node.end = token
+      else if (handler.end) handler.end (node, token) // REVIEW (as of yet, unused)
+      if (handler.eval)
+        _push (stack[0], [nodeType, handler.eval (node)]) // Node was retained
+    }
+
+    else { // log ('leaf', { token })
+      const [type] = token
+      const handler = handlers [type] || { }
+      const result = handler.eval ? [type, handler.eval (token[1])] : [type, token]
+      _push (stack[0], result)
+    }
+  }
+
+  function _push ([nodeType, node], [type, item]) {
+    if (type === 'space') return // TODO can we ignore in a less verbose way than in push everywhere?
+    const handler = (handlers[nodeType]||{})
+    // log ('push', { handler, nodeType, node, type, item })
+    if (handler.push)
+      handler.push (node, [type, item])
+    else if (node instanceof Node)
+      node.content.push (item)
+    else if (node instanceof Array)
+      node.push (item)
+    else {
+      log ('Err', { nodeType, node, item })
+      throw new Error (`push: don't know how to push to ${node.constructor.name}'`)
+    }
+  }
+
 }
 
+// Exports
+// -------
 
-//
-// Test
-/*
-
-function token (type, value) {
-  return [type, value]
-}
-
-var tokens = [start('foo'), token ('string', 'asdff'), start ('bar'), token ('asdf'), end ('bar'), token('foo')]
-var tree = buildTree (tokens)
-
-log (JSON.stringify(tree.content[0], null, 2))
-
-//*/
-
-// Aallllright, excellent
-// Now.. try it on the css using a quick transformer on the tokens
-// to add start/end values
-
-function brace (token) {
-  const chunks = token[0].split('-')
-    , type = chunks[0]
-    , tag = chunks.pop ()
-  if (tag === 'start')
-    return start (type, token[1])
-  if (tag === 'end')
-    return end (type, token[1])
-}
-
-
-let parse = require ('./').parse
-function buildTree (iterable) {
-  const builder = new TreeBuilder (brace)
-  for (let x of iterable)
-    builder.write (x)
-  return builder.root
-}
-
-
-var sample = 'foo @bar { baz:bee; he:he\\ae e; }'
-
-function str (o) {
-  return JSON.stringify (o, null , 2)
-}
-
-log (str (buildTree (parse (sample)).content))
-
-// Excellent
-// Now... add the algebraic interpretation
-
-
-
-
-
-
-
-
-
-
+module.exports = { Node, TreeBuilder }

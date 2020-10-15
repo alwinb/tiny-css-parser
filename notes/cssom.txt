@@ -1,0 +1,35 @@
+CSS Object model
+----------------
+
+Allright, reading the spec
+rule type are
+
+* qRule style,
+
+* atRule counter-style,
+* atRule font-face,
+* atRule keyframes,
+* atRule media,
+* atRule page,
+* atRule supports,
+* atRule viewport
+
+* atRule import,
+* atRule keyframe,
+* atRule margin,
+* atRule namespace,
+* atRule font-feature-values,
+
+
+// Currently in parser:
+
+* counter-style: DECLS,
+* font-face: DECLS,
+* keyframes: RULES,
+* media: RULES,
+* page: DECLS,
+* supports: RULES,
+* viewport: DECLS,
+
+and
+* document: RULES,
